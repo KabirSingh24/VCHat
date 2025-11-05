@@ -211,49 +211,49 @@ public class SignalingHandler extends TextWebSocketHandler {
         }
     }
 
-//    private void handleJoinCall(WebSocketSession session, String roomId) throws Exception {
-//        connections.computeIfAbsent(roomId, k -> new ArrayList<>()).add(session);
-//        timeOnline.put(session.getId(), new Date());
-//
-//        // Notify others in room
-//        for (WebSocketSession s : connections.get(roomId)) {
-//            if (s.isOpen() && !s.getId().equals(session.getId())) {
-//                s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
-//            }
-//        }
-//
-//        // Send chat history if available
-//        if (messages.containsKey(roomId)) {
-//            for (Map<String, String> msg : messages.get(roomId)) {
-//                session.sendMessage(new TextMessage(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(msg)));
-//            }
-//        }
-//
-//        System.out.println("User " + session.getId() + " joined room " + roomId);
-//    }
-
     private void handleJoinCall(WebSocketSession session, String roomId) throws Exception {
         connections.computeIfAbsent(roomId, k -> new ArrayList<>()).add(session);
         timeOnline.put(session.getId(), new Date());
 
-        List<String> existingIds = new ArrayList<>();
+        // Notify others in room
         for (WebSocketSession s : connections.get(roomId)) {
-            if (!s.getId().equals(session.getId())) {
-                existingIds.add(s.getId());
-            // Notify existing users
-                if (s.isOpen()) {
-                    s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
-                }
+            if (s.isOpen() && !s.getId().equals(session.getId())) {
+                s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
             }
         }
 
-    // Send the list of existing users to the new user
-        if (session.isOpen()) {
-                session.sendMessage(new TextMessage("{\"type\":\"existing-users\",\"clients\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(existingIds) + "}"));
+        // Send chat history if available
+        if (messages.containsKey(roomId)) {
+            for (Map<String, String> msg : messages.get(roomId)) {
+                session.sendMessage(new TextMessage(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(msg)));
+            }
         }
 
         System.out.println("User " + session.getId() + " joined room " + roomId);
     }
+
+//    private void handleJoinCall(WebSocketSession session, String roomId) throws Exception {
+//        connections.computeIfAbsent(roomId, k -> new ArrayList<>()).add(session);
+//        timeOnline.put(session.getId(), new Date());
+//
+//        List<String> existingIds = new ArrayList<>();
+//        for (WebSocketSession s : connections.get(roomId)) {
+//            if (!s.getId().equals(session.getId())) {
+//                existingIds.add(s.getId());
+//            // Notify existing users
+//                if (s.isOpen()) {
+//                    s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
+//                }
+//            }
+//        }
+//
+//    // Send the list of existing users to the new user
+//        if (session.isOpen()) {
+//                session.sendMessage(new TextMessage("{\"type\":\"existing-users\",\"clients\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(existingIds) + "}"));
+//        }
+//
+//        System.out.println("User " + session.getId() + " joined room " + roomId);
+//    }
 
 
     private void handleSignal(WebSocketSession sender, String toId, String data) throws Exception {
