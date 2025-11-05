@@ -11,12 +11,14 @@ import ChatIcon from '@mui/icons-material/Chat';
 import SockJS from 'sockjs-client';
 import styles from "../styles/videoComponent.module.css";
 import server from "../enviroment";
+import { useNavigate } from 'react-router-dom';
 
 const server_url = server;
 var connections = {};
 const peerConfigConnections = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
 export default function VideoMeetComponent() {
+  const router=useNavigate();
   const socketRef = useRef(null);
   const socketIdRef = useRef(String(Date.now()) + Math.floor(Math.random() * 10000));
   // separate refs: lobby preview and in-call local video
@@ -424,7 +426,7 @@ export default function VideoMeetComponent() {
     try { window.localStream.getTracks().forEach(track => track.stop()); } catch (e) { }
     Object.values(connections).forEach(pc => { try { pc.close(); } catch (e) { } });
     connections = {};
-    window.location.href = "/home";
+    router ( "/home");
   };
 
   return (
