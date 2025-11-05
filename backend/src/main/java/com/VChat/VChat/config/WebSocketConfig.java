@@ -15,7 +15,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(new SignalingHandler(),"/ws")
-                .setAllowedOrigins("http://localhost:3000", "https://zoomclone-frontend.onrender.com")
+                .setAllowedOrigins("https://vchatpage.onrender.com")
                 .withSockJS();
     }
 }
