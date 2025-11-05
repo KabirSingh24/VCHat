@@ -4,4 +4,4 @@ frontend/node_module
 
 # IDE files
 /.idea/
-/*.iml
+/*.imlgit 
