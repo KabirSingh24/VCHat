@@ -137,7 +137,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 // SignalingHandler.java
-package com.vchat.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
