@@ -558,6 +558,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import server from '../enviroment';
 import { useNavigate } from 'react-router-dom';
 import styles from '../styles/videoComponent.module.css';
+import SockJS from 'sockjs-client';
 
 const peerConfigConnections = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 var connections = {};
