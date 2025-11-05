@@ -574,9 +574,9 @@ import { useNavigate } from "react-router-dom";
 const server_url = server;
 const peerConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 let connections = {};
-const navigate = useNavigate();
 
 export default function VideoMeetComponent() {
+  const navigate = useNavigate();
   const socketRef = useRef(null);
   const socketIdRef = useRef(Date.now() + "" + Math.floor(Math.random() * 10000));
   const localVideoLobbyRef = useRef(null);
