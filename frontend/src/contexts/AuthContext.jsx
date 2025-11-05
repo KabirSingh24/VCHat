@@ -61,13 +61,13 @@ export const AuthProvider = ({ children }) => {
     }
     const getHistoryOfUser = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8080/auth/addUserHistory");
+        const res = await fetch(`${server}/auth/addUserHistory`);
         const data = await res.json();
         console.log(data);
     };
     const addToUserHistory = async (meetingCode) => {
         const token = localStorage.getItem("token");
-        await fetch("http://localhost:8080/auth/addUserHistory", {
+        await fetch(`${server}/auth/addUserHistory`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token, meeting_code: meetingCode })
