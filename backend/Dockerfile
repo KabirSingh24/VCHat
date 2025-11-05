@@ -1,5 +1,5 @@
-# Use stable OpenJDK 17 image from Eclipse Temurin (official LTS build)
-FROM eclipse-temurin:17-jdk-jammy
+# Use official OpenJDK image
+FROM openjdk:17-jdk-slim
 
 # Set working directory
 WORKDIR /app
@@ -27,3 +27,6 @@ EXPOSE 8080
 
 # Run the jar file (update JAR name if needed)
 CMD ["java", "-jar", "target/VChat-0.0.1-SNAPSHOT.jar"]
+
+
+
