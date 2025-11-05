@@ -1,0 +1,7 @@
+frontend/node_module
+# Maven build folder
+/target/
+
+# IDE files
+/.idea/
+/*.iml
