@@ -569,10 +569,12 @@ import ChatIcon from '@mui/icons-material/Chat';
 import SockJS from 'sockjs-client';
 import styles from "../styles/videoComponent.module.css";
 import server from "../enviroment";
+import { useNavigate } from "react-router-dom";
 
 const server_url = server;
 const peerConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 let connections = {};
+const navigate = useNavigate();
 
 export default function VideoMeetComponent() {
   const socketRef = useRef(null);
@@ -630,7 +632,7 @@ export default function VideoMeetComponent() {
       newStream = new MediaStream([black(), silence()]);
     }
 
-    try { window.localStream?.getTracks().forEach(t => t.stop()); } catch (e) {}
+    try { window.localStream?.getTracks().forEach(t => t.stop()); } catch (e) { }
     window.localStream = newStream;
     if (localVideoLobbyRef.current) localVideoLobbyRef.current.srcObject = newStream;
     if (localVideoRef.current) localVideoRef.current.srcObject = newStream;
@@ -699,7 +701,7 @@ export default function VideoMeetComponent() {
     }
 
     if (signal.ice) {
-      try { await pc.addIceCandidate(new RTCIceCandidate(signal.ice)); } catch {}
+      try { await pc.addIceCandidate(new RTCIceCandidate(signal.ice)); } catch { }
     }
   };
 
@@ -717,13 +719,13 @@ export default function VideoMeetComponent() {
     socketRef.current.send(JSON.stringify({ type: "signal", fromId: socketIdRef.current, toId, data }));
   };
 
-  const connectToSocketServer = () => {
+  const connectToSocketServer = (finalUsername) => {
     socketRef.current = new SockJS(`${server_url}/ws`);
     socketRef.current.onopen = () => {
       socketRef.current.send(JSON.stringify({
         type: "join-call",
         roomId: window.location.href,
-        username,
+        username:finalUsername,
         clientId: socketIdRef.current
       }));
     };
@@ -752,18 +754,42 @@ export default function VideoMeetComponent() {
   };
 
   // ---------- UI Handlers ----------
-  const startCall = async () => {
+  // const startCall = async () => {
+  //   setAskForUsername(false);
+  //   await updateLocalStream({ useCamera: video, useMic: audio });
+  //   connectToSocketServer();
+  // };
+
+  const start = async () => {
+    let finalUsername = username;
+    if (!finalUsername) {
+      finalUsername = "Guest_" + Math.floor(Math.random() * 10000);
+      setUsername(finalUsername);
+    }
+
     setAskForUsername(false);
-    await updateLocalStream({ useCamera: video, useMic: audio });
-    connectToSocketServer();
+
+    try {
+      await updateLocalStream({ useCamera: video, useMic: audio });
+    } catch (e) { console.log(e); }
+
+    connectToSocketServer(finalUsername);
   };
 
+
+  // const handleEndCall = () => {
+  //   try { window.localStream.getTracks().forEach(t => t.stop()); } catch { }
+  //   Object.values(connections).forEach(pc => pc.close());
+  //   connections = {};
+  //   window.location.href = "/home";
+  // };
   const handleEndCall = () => {
-    try { window.localStream.getTracks().forEach(t => t.stop()); } catch {}
-    Object.values(connections).forEach(pc => pc.close());
+    try { window.localStream.getTracks().forEach(track => track.stop()); } catch (e) { }
+    Object.values(connections).forEach(pc => { try { pc.close(); } catch (e) { } });
     connections = {};
-    window.location.href = "/home";
+    navigate("/home");  // <-- use react-router navigation
   };
+
 
   const handleVideoToggle = () => {
     const track = window.localStream?.getVideoTracks()[0];
@@ -785,7 +811,7 @@ export default function VideoMeetComponent() {
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
         setScreen(true);
         stream.getTracks().forEach(track => track.onended = () => { updateLocalStream({ useCamera: video, useMic: audio }); setScreen(false); });
-      } catch {}
+      } catch { }
     } else {
       await updateLocalStream({ useCamera: video, useMic: audio });
       setScreen(false);
