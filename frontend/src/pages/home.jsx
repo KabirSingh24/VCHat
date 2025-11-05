@@ -26,7 +26,7 @@ function HomeComponent() {
 
                 <div style={{ display: "flex", alignItems: "center" }}>
 
-                    <h2>Apna Video Call</h2>
+                    <h2 onClick={()=>{navigate("/")}}>VCHat</h2>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center" }}>
@@ -54,7 +54,7 @@ function HomeComponent() {
             <div className="meetContainer">
                 <div className="leftPanel">
                     <div>
-                        <h2>Providing Quality Video Call Just Like Quality Education</h2><br></br>
+                        <h2>Providing Quality Video Call Just Like Your Favourite Person</h2><br></br>
 
                         <div style={{ display: 'flex', gap: "10px" }}>
 
