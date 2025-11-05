@@ -59,12 +59,21 @@ export const AuthProvider = ({ children }) => {
             }
         }
     }
+    // const getHistoryOfUser = async () => {
+    //     const token = localStorage.getItem("token");
+    //     const res = await fetch(`${server}/auth/getUserHistory`);
+    //     const data = await res.json();
+    //     console.log(data);
+    // };
+
     const getHistoryOfUser = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${server}/auth/getUserHistory`);
+        const res = await fetch(`${server}/auth/getUserHistory?token=${token}`);
         const data = await res.json();
         console.log(data);
+        return data; // return the fetched history
     };
+
     const addToUserHistory = async (meetingCode) => {
         const token = localStorage.getItem("token");
         await fetch(`${server}/auth/addUserHistory`, {
@@ -76,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
 
     const data = {
-        userData, setUserData, handlerRegister, handleLogin,addToUserHistory,getHistoryOfUser
+        userData, setUserData, handlerRegister, handleLogin, addToUserHistory, getHistoryOfUser
     }
     return (
         <AuthContext.Provider value={data}>
