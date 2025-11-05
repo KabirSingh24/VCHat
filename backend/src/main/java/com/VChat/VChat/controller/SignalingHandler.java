@@ -194,10 +194,14 @@ public class SignalingHandler extends TextWebSocketHandler {
             }
         }
 
+        // Change this inside handleJoinCall
         if (session.isOpen()) {
-            session.sendMessage(new TextMessage("{\"type\":\"existing-users\",\"clients\":" +
-                    mapper.writeValueAsString(existingIds) + "}"));
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "existing-users");
+            payload.put("clients", existingIds);   // <--- make sure it's "clients"
+            session.sendMessage(new TextMessage(mapper.writeValueAsString(payload)));
         }
+
 
         // send chat history if available
         if (messages.containsKey(roomId)) {
