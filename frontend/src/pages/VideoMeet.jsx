@@ -1048,16 +1048,24 @@ export default function VideoMeetComponent() {
     }
   };
 
+  // const handleUserJoined = (userId, clients) => {
+  //   if (!clients) return;
+  //   clients.forEach(id => {
+  //     if (id === socketIdRef.current) return;
+  //     if (!connections[id]) {
+  //       const pc = createPeerConnection(id, true);
+  //       if (window.localStream) pc.onnegotiationneeded && pc.onnegotiationneeded();
+  //     }
+  //   });
+  // };
   const handleUserJoined = (userId, clients) => {
     if (!clients) return;
     clients.forEach(id => {
       if (id === socketIdRef.current) return;
-      if (!connections[id]) {
-        const pc = createPeerConnection(id, true);
-        if (window.localStream) pc.onnegotiationneeded && pc.onnegotiationneeded();
-      }
+      if (!connections[id]) createPeerConnection(id, true);
     });
   };
+
 
   // Socket
   const sendSignal = (toId, data) => {
@@ -1066,26 +1074,35 @@ export default function VideoMeetComponent() {
   };
 
   const connectToSocketServer = () => {
-    socketRef.current = new SockJS(`${server_url}/ws`);
-    socketRef.current.onopen = () => {
-      socketRef.current.send(JSON.stringify({
-        type: "join-call",
-        roomId: window.location.href,
-        username,
-        clientId: socketIdRef.current
-      }));
-    };
-
     socketRef.current.onmessage = e => {
       const msg = JSON.parse(e.data);
       switch (msg.type) {
-        case "signal": gotSignal(msg.fromId, JSON.stringify(msg.data)); break;
-        case "user-joined": handleUserJoined(msg.userId, msg.clients); break;
-        case "user-left": setVideos(v => v.filter(x => x.socketId !== msg.userId)); delete connections[msg.userId]; break;
-        case "chat-message": addMessage(msg.data, msg.sender, msg.fromId); break;
-        default: console.log("Unknown message type:", msg.type);
+        case "signal":
+          gotSignal(msg.fromId, JSON.stringify(msg.data));
+          break;
+
+        case "user-joined":
+          handleUserJoined(msg.userId, [msg.userId]);
+          break;
+
+        case "existing-users":
+          handleUserJoined(null, msg.clients); // create peers for all existing users
+          break;
+
+        case "user-left":
+          setVideos(v => v.filter(x => x.socketId !== msg.userId));
+          delete connections[msg.userId];
+          break;
+
+        case "chat-message":
+          addMessage(msg.data, msg.sender, msg.fromId);
+          break;
+
+        default:
+          console.log("Unknown message type:", msg.type);
       }
     };
+
   };
 
   // Chat
