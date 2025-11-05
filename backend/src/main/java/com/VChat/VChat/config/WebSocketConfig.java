@@ -6,16 +6,31 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
+
+//@Configuration
+//@EnableWebSocket
+//public class WebSocketConfig implements WebSocketConfigurer {
+//
+//
+//    @Override
+//    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+//        registry.addHandler(new SignalingHandler(),"/ws")
+//                .setAllowedOrigins("https://vchatpage.onrender.com")
+//                .withSockJS();
+//    }
+//}
+
 
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new SignalingHandler(),"/ws")
-                .setAllowedOrigins("https://vchatpage.onrender.com")
+        registry.addHandler(new SignalingHandler(), "/ws")
+                .setAllowedOrigins("https://vchatpage.onrender.com", "https://vchat-rp52.onrender.com")
+                .addInterceptors(new HttpSessionHandshakeInterceptor())
                 .withSockJS();
     }
 }
