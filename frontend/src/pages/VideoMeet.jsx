@@ -1249,8 +1249,9 @@ import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useNavigate } from 'react-router-dom';
 import styles from "../styles/videoComponent.module.css";
+import server from "../enviroment";
 
-const server_url = "ws://localhost:8080/ws"; // Change to your server
+const server_url = `ws:${server}/ws`; // Change to your server
 const peerConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 let connections = {};
 
