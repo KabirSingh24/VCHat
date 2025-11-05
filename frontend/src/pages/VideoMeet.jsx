@@ -1251,7 +1251,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from "../styles/videoComponent.module.css";
 import server from "../enviroment";
 
-const server_url = `wss:${server}/ws`; // Change to your server
+const server_url = `${server}/ws`; // Change to your server
 const peerConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 let connections = {};
 
