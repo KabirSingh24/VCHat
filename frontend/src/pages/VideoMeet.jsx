@@ -725,7 +725,7 @@ export default function VideoMeetComponent() {
       socketRef.current.send(JSON.stringify({
         type: "join-call",
         roomId: window.location.href,
-        username:finalUsername,
+        username: finalUsername,
         clientId: socketIdRef.current
       }));
     };
@@ -761,19 +761,12 @@ export default function VideoMeetComponent() {
   // };
 
   const startCall = async () => {
-    let finalUsername = username;
-    if (!finalUsername) {
-      finalUsername = "Guest_" + Math.floor(Math.random() * 10000);
-      setUsername(finalUsername);
-    }
-
+    if (!username) return alert("Please enter a username"); // no guest fallback
     setAskForUsername(false);
-
     try {
       await updateLocalStream({ useCamera: video, useMic: audio });
     } catch (e) { console.log(e); }
-
-    connectToSocketServer(finalUsername);
+    connectToSocketServer(username);
   };
 
 
