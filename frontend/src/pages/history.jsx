@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom';
 import Card from '@mui/material/Card';
-import {IconButton} from "@mui/material";
 import Box from '@mui/material/Box';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
@@ -10,22 +9,30 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import HomeIcon from '@mui/icons-material/Home';
 
-
+import { IconButton } from '@mui/material';
 export default function History() {
 
-    const {getHistoryOfUser} =useContext(AuthContext);
-    const [meetings,setMeetings]=useState([]);
-    const routeTo=useNavigate();
-    useEffect(()=>{
-        const fetchHistory=async ()=>{
-            try{
-                const history=await getHistoryOfUser();
+
+    const { getHistoryOfUser } = useContext(AuthContext);
+
+    const [meetings, setMeetings] = useState([])
+
+
+    const routeTo = useNavigate();
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const history = await getHistoryOfUser();
                 setMeetings(history);
-            }catch{
+            } catch {
+                // IMPLEMENT SNACKBAR
             }
         }
+
         fetchHistory();
-    },[]);
+    }, [])
+
     let formatDate = (dateString) => {
 
         const date = new Date(dateString);
@@ -36,8 +43,9 @@ export default function History() {
         return `${day}/${month}/${year}`
 
     }
-  return (
-     <div>
+
+    return (
+        <div>
 
             <IconButton onClick={() => {
                 routeTo("/home")
@@ -76,5 +84,5 @@ export default function History() {
             }
 
         </div>
-  )
+    )
 }
