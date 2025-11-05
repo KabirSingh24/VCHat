@@ -1,5 +1,5 @@
-# Use official OpenJDK image
-FROM openjdk:17-jdk-slim
+# Use stable OpenJDK 17 image from Eclipse Temurin (official LTS build)
+FROM eclipse-temurin:17-jdk-jammy
 
 # Set working directory
 WORKDIR /app
@@ -9,21 +9,21 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Download dependencies first (caching optimization)
+# Download dependencies (cache layer)
 RUN ./mvnw dependency:go-offline -B
 
-# Copy the source code
+# Copy the rest of the project
 COPY src src
 
-# Give execution permission to mvnw
+# Give permission to mvnw
 RUN chmod +x mvnw
 
-# Build the project
+# Build the JAR
 RUN ./mvnw clean package -DskipTests
 
-# Expose the port (Render will map it automatically)
+# Expose the port Render will map
 ENV PORT=8080
 EXPOSE 8080
 
-# Run the jar file (replace JAR name if needed)
+# Run the jar file (update JAR name if needed)
 CMD ["java", "-jar", "target/VChat-0.0.1-SNAPSHOT.jar"]
