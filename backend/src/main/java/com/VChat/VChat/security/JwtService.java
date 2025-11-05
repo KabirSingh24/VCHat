@@ -1,7 +1,6 @@
 package com.VChat.VChat.security;
 
 
-import com.VChat.VChat.model.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +21,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis()+1000*60+10))
                 .signWith(getSecretKey())
                 .compact();
     }
-
-
 }

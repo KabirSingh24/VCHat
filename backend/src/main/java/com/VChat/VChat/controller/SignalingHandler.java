@@ -27,10 +27,10 @@ public class SignalingHandler extends TextWebSocketHandler {
         connections.forEach((roomId, sessions) -> {
             if (sessions != null && sessions.remove(session)) {
 
-                // ✅ Remove any stale or null sessions
+                //Remove any stale or null sessions
                 sessions.removeIf(s -> s == null || !s.isOpen());
 
-                // ✅ Safely notify remaining participants
+                // Safely notify remaining participants
                 for (WebSocketSession s : sessions) {
                     try {
                         if (s != null && s.isOpen()) {
@@ -41,7 +41,7 @@ public class SignalingHandler extends TextWebSocketHandler {
                     }
                 }
 
-                // ✅ Clean up empty rooms
+                // Clean up empty rooms
                 if (sessions.isEmpty()) {
                     connections.remove(roomId);
                 }
@@ -153,6 +153,3 @@ public class SignalingHandler extends TextWebSocketHandler {
         System.out.println("User disconnected: " + session.getId());
     }
 }
-
-///add_to_activity
-///get_all_activity
