@@ -2,7 +2,7 @@
 .landingPageContainer {
   width: 100%;
   min-height: 100vh;
-  background: url("/background.png") no-repeat center center/cover;
+  background: url("/public/background.png") no-repeat center center/cover;
   color: white;
   display: flex;
   flex-direction: column;
