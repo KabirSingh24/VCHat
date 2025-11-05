@@ -760,7 +760,7 @@ export default function VideoMeetComponent() {
   //   connectToSocketServer();
   // };
 
-  const start = async () => {
+  const startCall = async () => {
     let finalUsername = username;
     if (!finalUsername) {
       finalUsername = "Guest_" + Math.floor(Math.random() * 10000);
