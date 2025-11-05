@@ -1,4 +1,4 @@
-/* .meetVideoContainer {
+.meetVideoContainer {
     position: relative;
     height: 100vh;
     background: rgb(1, 4, 48);
@@ -119,10 +119,10 @@
 .chattingArea {
     position: absolute;
     bottom: 0;
-} */
+}
 
 
-
+/* 
 .meetVideoContainer {
     position: relative;
     height: 100vh;
@@ -170,7 +170,7 @@
 }
 
 .conferenceView video {
-    flex: 1 1 300px; /* allow videos to grow */
+    flex: 1 1 300px; 
     max-width: 45%;
     height: auto;
     border-radius: 10px;
@@ -199,4 +199,4 @@
     position: absolute;
     bottom: 0;
     width: 100%;
-}
+} */
