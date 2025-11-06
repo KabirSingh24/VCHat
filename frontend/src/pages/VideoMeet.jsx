@@ -1271,56 +1271,287 @@
 
 
 
+// import SockJS from "sockjs-client";
+// import { Client } from "@stomp/stompjs";
+// import server from "../enviroment";
+
+// import React, { useEffect, useRef, useState } from 'react'
+// import { Badge, IconButton, TextField } from '@mui/material';
+// import { Button } from '@mui/material';
+// import VideocamIcon from '@mui/icons-material/Videocam';
+// import VideocamOffIcon from '@mui/icons-material/VideocamOff'
+// import styles from "../styles/videoComponent.module.css";
+// import CallEndIcon from '@mui/icons-material/CallEnd'
+// import MicIcon from '@mui/icons-material/Mic'
+// import MicOffIcon from '@mui/icons-material/MicOff'
+// import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+// import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
+// import ChatIcon from '@mui/icons-material/Chat'
+
+
+// const server_url = server; // your Spring Boot backend
+// // let stompClient = null;
+// const stompClient = new Client({
+//   brokerURL: undefined, // leave undefined when using SockJS
+//   reconnectDelay: 5000,
+//   webSocketFactory: () => new SockJS(server_url + "/ws"),
+//   debug: (str) => console.log(str),
+// });
+
+// stompClient.onConnect = (frame) => {
+//   console.log("Connected: ", frame);
+//   stompClient.subscribe("/topic/chat", (message) => {
+//     console.log("Chat:", message.body);
+//   });
+// };
+
+// stompClient.activate();
+
+
+// export default function VideoMeet() {
+//   const localVideoref = useRef();
+//   const videoRef = useRef({});
+//   const [username, setUsername] = useState("");
+//   const [videoAvailable, setVideoAvailable] = useState(true);
+//   const [audioAvailable, setAudioAvailable] = useState(true);
+//   const [messages, setMessages] = useState([]);
+//   const [newMessage, setNewMessage] = useState("");
+//   const [users, setUsers] = useState([]);
+//   const [connected, setConnected] = useState(false);
+//   const [screenShare, setScreenShare] = useState(false);
+
+//   const connections = useRef({}); // store RTCPeerConnections
+
+//   useEffect(() => {
+//     getPermissions();
+//   }, []);
+
+//   // ====== MEDIA PERMISSIONS ======
+//   const getPermissions = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({
+//         video: true,
+//         audio: true,
+//       });
+//       window.localStream = stream;
+//       localVideoref.current.srcObject = stream;
+//       setVideoAvailable(true);
+//       setAudioAvailable(true);
+//     } catch (err) {
+//       console.error("Media permission error:", err);
+//       setVideoAvailable(false);
+//       setAudioAvailable(false);
+//     }
+//   };
+
+//   // ====== CONNECT TO SPRING WEBSOCKET SERVER ======
+//   const connectToSocketServer = () => {
+//     const socket = new SockJS(`${server_url}/ws`);
+//     stompClient = Stomp.over(socket);
+
+//     stompClient.connect({}, () => {
+//       console.log("Connected to STOMP server");
+//       setConnected(true);
+
+//       // Subscribe to chat topic
+//       stompClient.subscribe("/topic/chat", (message) => {
+//         const msg = JSON.parse(message.body);
+//         setMessages((prev) => [...prev, msg]);
+//       });
+
+//       // Subscribe to signaling (WebRTC)
+//       stompClient.subscribe(`/topic/signal/${username}`, (signal) => {
+//         const payload = JSON.parse(signal.body);
+//         gotMessageFromServer(payload.fromId, JSON.stringify(payload.data));
+//       });
+
+//       // Subscribe to user join notifications
+//       stompClient.subscribe("/topic/user-joined", (msg) => {
+//         const data = JSON.parse(msg.body);
+//         if (!users.includes(data.username)) {
+//           setUsers((prev) => [...prev, data.username]);
+//         }
+//       });
+
+//       // Notify backend to join room
+//       stompClient.send(
+//         "/app/join-call",
+//         {},
+//         JSON.stringify({ username: username, room: "default" })
+//       );
+//     });
+//   };
+
+//   // ====== HANDLE SIGNALS ======
+//   const gotMessageFromServer = (fromId, message) => {
+//     // your WebRTC signaling logic here
+//     console.log("Signal received:", fromId, message);
+//   };
+
+//   // ====== CHAT SEND ======
+//   const sendMessage = () => {
+//     if (stompClient && connected && newMessage.trim() !== "") {
+//       const msgObj = { sender: username, content: newMessage };
+//       stompClient.send("/app/send-chat", {}, JSON.stringify(msgObj));
+//       setMessages((prev) => [...prev, msgObj]);
+//       setNewMessage("");
+//     }
+//   };
+
+//   // ====== TOGGLE VIDEO ======
+//   const handleVideo = () => {
+//     const enabled = window.localStream.getVideoTracks()[0].enabled;
+//     window.localStream.getVideoTracks()[0].enabled = !enabled;
+//     setVideoAvailable(!enabled);
+//   };
+
+//   // ====== TOGGLE AUDIO ======
+//   const handleAudio = () => {
+//     const enabled = window.localStream.getAudioTracks()[0].enabled;
+//     window.localStream.getAudioTracks()[0].enabled = !enabled;
+//     setAudioAvailable(!enabled);
+//   };
+
+//   // ====== SCREEN SHARE ======
+//   const handleScreen = async () => {
+//     if (!screenShare) {
+//       const displayStream = await navigator.mediaDevices.getDisplayMedia({
+//         video: true,
+//       });
+//       window.localStream = displayStream;
+//       localVideoref.current.srcObject = displayStream;
+//     } else {
+//       getPermissions();
+//     }
+//     setScreenShare(!screenShare);
+//   };
+
+//   // ====== END CALL ======
+//   const handleEndCall = () => {
+//     window.localStream.getTracks().forEach((track) => track.stop());
+//     stompClient?.disconnect();
+//     setConnected(false);
+//   };
+
+//   // ====== UI RENDER ======
+//   return (
+//     <div className={styles.videoContainer}>
+//       {!connected ? (
+//         <div className={styles.loginBox}>
+//           <TextField
+//             variant="outlined"
+//             placeholder="Enter Username"
+//             onChange={(e) => setUsername(e.target.value)}
+//             value={username}
+//           />
+//           <Button
+//             variant="contained"
+//             color="primary"
+//             onClick={connectToSocketServer}
+//             disabled={!username}
+//           >
+//             Join Call
+//           </Button>
+//         </div>
+//       ) : (
+//         <div className={styles.mainVideoPage}>
+//           <div className={styles.videosSection}>
+//             <video
+//               ref={localVideoref}
+//               autoPlay
+//               muted
+//               playsInline
+//               className={styles.localVideo}
+//             />
+//           </div>
+
+//           <div className={styles.controls}>
+//             <IconButton onClick={handleVideo}>
+//               {videoAvailable ? (
+//                 <VideocamIcon style={{ color: "white" }} />
+//               ) : (
+//                 <VideocamOffIcon style={{ color: "red" }} />
+//               )}
+//             </IconButton>
+
+//             <IconButton onClick={handleAudio}>
+//               <i
+//                 className="fa fa-microphone"
+//                 style={{ color: audioAvailable ? "white" : "red" }}
+//               />
+//             </IconButton>
+
+//             <IconButton onClick={handleScreen}>
+//               <ScreenShareIcon style={{ color: "white" }} />
+//             </IconButton>
+
+//             <IconButton onClick={handleEndCall}>
+//               <CallEndIcon style={{ color: "red" }} />
+//             </IconButton>
+
+//             <IconButton>
+//               <Badge badgeContent={messages.length} color="secondary">
+//                 <ChatIcon style={{ color: "white" }} />
+//               </Badge>
+//             </IconButton>
+//           </div>
+
+//           <div className={styles.chatBox}>
+//             <div className={styles.chatMessages}>
+//               {messages.map((msg, i) => (
+//                 <div key={i} className={styles.chatMessage}>
+//                   <b>{msg.sender}: </b>
+//                   {msg.content}
+//                 </div>
+//               ))}
+//             </div>
+//             <div className={styles.chatInput}>
+//               <TextField
+//                 value={newMessage}
+//                 onChange={(e) => setNewMessage(e.target.value)}
+//                 placeholder="Type a message..."
+//                 variant="outlined"
+//                 size="small"
+//               />
+//               <Button variant="contained" onClick={sendMessage}>
+//                 Send
+//               </Button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import server from "../enviroment";
 
-import React, { useEffect, useRef, useState } from 'react'
-import { Badge, IconButton, TextField } from '@mui/material';
-import { Button } from '@mui/material';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff'
+import React, { useEffect, useRef, useState } from "react";
+import { Badge, IconButton, TextField, Button } from "@mui/material";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import CallEndIcon from "@mui/icons-material/CallEnd";
+import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import ChatIcon from "@mui/icons-material/Chat";
 import styles from "../styles/videoComponent.module.css";
-import CallEndIcon from '@mui/icons-material/CallEnd'
-import MicIcon from '@mui/icons-material/Mic'
-import MicOffIcon from '@mui/icons-material/MicOff'
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
-import ChatIcon from '@mui/icons-material/Chat'
 
-
-const server_url = server; // your Spring Boot backend
-// let stompClient = null;
-const stompClient = new Client({
-  brokerURL: undefined, // leave undefined when using SockJS
-  reconnectDelay: 5000,
-  webSocketFactory: () => new SockJS(server_url + "/ws"),
-  debug: (str) => console.log(str),
-});
-
-stompClient.onConnect = (frame) => {
-  console.log("Connected: ", frame);
-  stompClient.subscribe("/topic/chat", (message) => {
-    console.log("Chat:", message.body);
-  });
-};
-
-stompClient.activate();
-
+const server_url = server;
 
 export default function VideoMeet() {
   const localVideoref = useRef();
-  const videoRef = useRef({});
   const [username, setUsername] = useState("");
   const [videoAvailable, setVideoAvailable] = useState(true);
   const [audioAvailable, setAudioAvailable] = useState(true);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [users, setUsers] = useState([]);
   const [connected, setConnected] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
 
-  const connections = useRef({}); // store RTCPeerConnections
+  // ✅ create stomp client reference (persist between renders)
+  const stompClientRef = useRef(null);
 
   useEffect(() => {
     getPermissions();
@@ -1334,7 +1565,7 @@ export default function VideoMeet() {
         audio: true,
       });
       window.localStream = stream;
-      localVideoref.current.srcObject = stream;
+      if (localVideoref.current) localVideoref.current.srcObject = stream;
       setVideoAvailable(true);
       setAudioAvailable(true);
     } catch (err) {
@@ -1346,53 +1577,59 @@ export default function VideoMeet() {
 
   // ====== CONNECT TO SPRING WEBSOCKET SERVER ======
   const connectToSocketServer = () => {
-    const socket = new SockJS(`${server_url}/ws`);
-    stompClient = Stomp.over(socket);
+    const client = new Client({
+      brokerURL: undefined, // SockJS fallback
+      webSocketFactory: () => new SockJS(server_url + "/ws"),
+      reconnectDelay: 5000,
+      debug: (str) => console.log(str),
+    });
 
-    stompClient.connect({}, () => {
-      console.log("Connected to STOMP server");
+    client.onConnect = () => {
+      console.log("✅ Connected to STOMP server");
       setConnected(true);
 
       // Subscribe to chat topic
-      stompClient.subscribe("/topic/chat", (message) => {
+      client.subscribe("/topic/chat", (message) => {
         const msg = JSON.parse(message.body);
         setMessages((prev) => [...prev, msg]);
       });
 
       // Subscribe to signaling (WebRTC)
-      stompClient.subscribe(`/topic/signal/${username}`, (signal) => {
+      client.subscribe(`/topic/signal/${username}`, (signal) => {
         const payload = JSON.parse(signal.body);
-        gotMessageFromServer(payload.fromId, JSON.stringify(payload.data));
+        console.log("Signal:", payload);
       });
 
       // Subscribe to user join notifications
-      stompClient.subscribe("/topic/user-joined", (msg) => {
+      client.subscribe("/topic/user-joined", (msg) => {
         const data = JSON.parse(msg.body);
-        if (!users.includes(data.username)) {
-          setUsers((prev) => [...prev, data.username]);
-        }
+        console.log("User joined:", data);
       });
 
-      // Notify backend to join room
-      stompClient.send(
-        "/app/join-call",
-        {},
-        JSON.stringify({ username: username, room: "default" })
-      );
-    });
-  };
+      // Notify backend that user joined
+      client.publish({
+        destination: "/app/join-call",
+        body: JSON.stringify({ username, room: "default" }),
+      });
+    };
 
-  // ====== HANDLE SIGNALS ======
-  const gotMessageFromServer = (fromId, message) => {
-    // your WebRTC signaling logic here
-    console.log("Signal received:", fromId, message);
+    client.onStompError = (frame) => {
+      console.error("Broker error:", frame.headers["message"]);
+    };
+
+    client.activate();
+    stompClientRef.current = client;
   };
 
   // ====== CHAT SEND ======
   const sendMessage = () => {
-    if (stompClient && connected && newMessage.trim() !== "") {
+    const stompClient = stompClientRef.current;
+    if (stompClient && stompClient.connected && newMessage.trim() !== "") {
       const msgObj = { sender: username, content: newMessage };
-      stompClient.send("/app/send-chat", {}, JSON.stringify(msgObj));
+      stompClient.publish({
+        destination: "/app/send-chat",
+        body: JSON.stringify(msgObj),
+      });
       setMessages((prev) => [...prev, msgObj]);
       setNewMessage("");
     }
@@ -1400,16 +1637,20 @@ export default function VideoMeet() {
 
   // ====== TOGGLE VIDEO ======
   const handleVideo = () => {
-    const enabled = window.localStream.getVideoTracks()[0].enabled;
-    window.localStream.getVideoTracks()[0].enabled = !enabled;
-    setVideoAvailable(!enabled);
+    const track = window.localStream?.getVideoTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      setVideoAvailable(track.enabled);
+    }
   };
 
   // ====== TOGGLE AUDIO ======
   const handleAudio = () => {
-    const enabled = window.localStream.getAudioTracks()[0].enabled;
-    window.localStream.getAudioTracks()[0].enabled = !enabled;
-    setAudioAvailable(!enabled);
+    const track = window.localStream?.getAudioTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      setAudioAvailable(track.enabled);
+    }
   };
 
   // ====== SCREEN SHARE ======
@@ -1419,17 +1660,17 @@ export default function VideoMeet() {
         video: true,
       });
       window.localStream = displayStream;
-      localVideoref.current.srcObject = displayStream;
+      if (localVideoref.current) localVideoref.current.srcObject = displayStream;
     } else {
-      getPermissions();
+      await getPermissions();
     }
     setScreenShare(!screenShare);
   };
 
   // ====== END CALL ======
   const handleEndCall = () => {
-    window.localStream.getTracks().forEach((track) => track.stop());
-    stompClient?.disconnect();
+    window.localStream?.getTracks().forEach((track) => track.stop());
+    stompClientRef.current?.deactivate();
     setConnected(false);
   };
 
@@ -1475,10 +1716,7 @@ export default function VideoMeet() {
             </IconButton>
 
             <IconButton onClick={handleAudio}>
-              <i
-                className="fa fa-microphone"
-                style={{ color: audioAvailable ? "white" : "red" }}
-              />
+              <MicIcon style={{ color: audioAvailable ? "white" : "red" }} />
             </IconButton>
 
             <IconButton onClick={handleScreen}>
