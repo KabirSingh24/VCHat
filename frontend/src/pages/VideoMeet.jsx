@@ -1119,6 +1119,19 @@ export default function VideoMeetComponent() {
     localVideoref.current?.srcObject?.getTracks().forEach((t) => t.stop());
     window.location.href = "/";
   };
+  
+    let handleVideo = () => {
+        setVideo(!video);
+        // getUserMedia();
+    }
+    let handleAudio = () => {
+        setAudio(!audio)
+        // getUserMedia();
+    }
+    let handleScreen = () => {
+        setScreen(!screen);
+    }
+
 
   // -----------------------------------
   // 🔹 5. UI
