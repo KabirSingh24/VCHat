@@ -592,7 +592,7 @@ export default function VideoMeetComponent() {
 
   const connectToSocketServer = () => {
     const roomId = window.location.pathname.split("/").pop();
-    socketRef.current = new SockJS(`${server}/ws`);
+    socketRef.current = new SockJS("https://vchat-rp52.onrender.com/ws");
 
     socketRef.current.onopen = () => {
       socketRef.current.send(JSON.stringify({ type: "join-call", roomId }));
