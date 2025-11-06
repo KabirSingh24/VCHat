@@ -14,7 +14,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import { useNavigate } from 'react-router-dom';
 import server from '../enviroment';
 
-const server_url = server; 
+const server_url = server;
 
 const peerConfigConnections = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -88,16 +88,16 @@ export default function VideoMeetComponent() {
     // cleanup on unmount
     return () => {
       // close socket
-      try { socketRef.current && socketRef.current.close(); } catch (e) {}
+      try { socketRef.current && socketRef.current.close(); } catch (e) { }
       // stop local tracks
-      try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) { }
       // close peer connections
       try {
         const conns = connectionsRef.current;
         Object.keys(conns).forEach(k => {
-          try { conns[k].close(); } catch (e) {}
+          try { conns[k].close(); } catch (e) { }
         });
-      } catch (e) {}
+      } catch (e) { }
     };
   }, []);
 
@@ -283,7 +283,7 @@ export default function VideoMeetComponent() {
     // cleanup peer connection
     const pc = connectionsRef.current[id];
     if (pc) {
-      try { pc.close(); } catch (e) {}
+      try { pc.close(); } catch (e) { }
       delete connectionsRef.current[id];
     }
     // cleanup pending
@@ -293,7 +293,7 @@ export default function VideoMeetComponent() {
   // connect to server via SockJS
   const connectToSocketServer = () => {
     if (socketRef.current) {
-      try { socketRef.current.close(); } catch (e) {}
+      try { socketRef.current.close(); } catch (e) { }
       socketRef.current = null;
     }
     const sock = new SockJS(`${server_url}/ws`);
@@ -317,8 +317,12 @@ export default function VideoMeetComponent() {
             handleSignal(msg.from, msg.data);
             break;
           case "chat":
-            setMessages(prev => [...prev, { sender: msg.sender, data: msg.message }]);
-            setNewMessages(n => n + 1);
+            // setMessages(prev => [...prev, { sender: msg.sender, data: msg.message }]);
+            // setNewMessages(n => n + 1);
+            if (msg.sender !== username) {  // ignore own message broadcast
+              setMessages(prev => [...prev, { sender: msg.sender, data: msg.message }]);
+              setNewMessages(n => n + 1);
+            }
             break;
           case "user-left":
             handleUserLeft(msg);
@@ -345,7 +349,7 @@ export default function VideoMeetComponent() {
     try {
       const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       // stop previous tracks if any
-      try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) { }
       window.localStream = permissionStream;
       if (localVideoref.current) localVideoref.current.srcObject = permissionStream;
       setVideo(true);
@@ -375,7 +379,7 @@ export default function VideoMeetComponent() {
   const handleVideoToggle = () => {
     setVideo(prev => {
       const next = !prev;
-      try { window.localStream && window.localStream.getVideoTracks().forEach(t => t.enabled = next); } catch (e) {}
+      try { window.localStream && window.localStream.getVideoTracks().forEach(t => t.enabled = next); } catch (e) { }
       return next;
     });
   };
@@ -383,7 +387,7 @@ export default function VideoMeetComponent() {
   const handleAudioToggle = () => {
     setAudio(prev => {
       const next = !prev;
-      try { window.localStream && window.localStream.getAudioTracks().forEach(t => t.enabled = next); } catch (e) {}
+      try { window.localStream && window.localStream.getAudioTracks().forEach(t => t.enabled = next); } catch (e) { }
       return next;
     });
   };
@@ -394,7 +398,7 @@ export default function VideoMeetComponent() {
         const disp = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         // replace local stream tracks with screen tracks
         // stop camera tracks temporarily
-        try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) { }
         window.localStream = disp;
         if (localVideoref.current) localVideoref.current.srcObject = disp;
         // replace tracks in existing peerConnections
@@ -415,7 +419,7 @@ export default function VideoMeetComponent() {
         disp.getTracks().forEach(t => t.onended = async () => {
           try {
             const cam = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            try { window.localStream && window.localStream.getTracks().forEach(tr => tr.stop()); } catch (e) {}
+            try { window.localStream && window.localStream.getTracks().forEach(tr => tr.stop()); } catch (e) { }
             window.localStream = cam;
             if (localVideoref.current) localVideoref.current.srcObject = cam;
             Object.values(connectionsRef.current).forEach(pc => {
@@ -446,8 +450,8 @@ export default function VideoMeetComponent() {
   };
 
   const handleEndCall = () => {
-    try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
-    try { socketRef.current && socketRef.current.close(); } catch (e) {}
+    try { window.localStream && window.localStream.getTracks().forEach(t => t.stop()); } catch (e) { }
+    try { socketRef.current && socketRef.current.close(); } catch (e) { }
     // navigate back (keeps UI handling same as before)
     router("/home");
   };

@@ -148,6 +148,12 @@ export default function Authentication() {
                             </Button>
       </Box>
       </Box>
+      <Snackbar
+
+                open={open}
+                autoHideDuration={4000}
+                message={message}
+            />
     </Box>
   );
 }
