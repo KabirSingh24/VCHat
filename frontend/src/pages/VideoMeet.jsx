@@ -1278,7 +1278,7 @@ import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
-import styles from "../styles/VideoMeet.module.css";
+import styles from "../styles/videoComponent.module.css";
 
 const server_url = "https://vchat-rp52.onrender.com"; // your Spring Boot backend
 let stompClient = null;
