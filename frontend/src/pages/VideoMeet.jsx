@@ -540,6 +540,7 @@ import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat';
 import styles from '../styles/videoComponent.module.css';
 import SockJS from 'sockjs-client';
+import server from "../enviroment";
 
 const server_url = server; // Your Java backend
 
