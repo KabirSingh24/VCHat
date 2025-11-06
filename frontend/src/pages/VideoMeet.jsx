@@ -1271,9 +1271,8 @@
 
 
 import SockJS from "sockjs-client";
-import { over } from "stompjs";
+import Stomp from "stompjs";
 import React, { useEffect, useRef, useState } from 'react'
-import io from "socket.io-client";
 import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -1330,7 +1329,7 @@ export default function VideoMeet() {
   // ====== CONNECT TO SPRING WEBSOCKET SERVER ======
   const connectToSocketServer = () => {
     const socket = new SockJS(`${server_url}/ws`);
-    stompClient = over(socket);
+    stompClient = Stomp.over(socket);
 
     stompClient.connect({}, () => {
       console.log("Connected to STOMP server");
