@@ -17,6 +17,51 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //
 //@Component
 //public class SignalingHandler extends TextWebSocketHandler {
@@ -118,156 +163,156 @@ import java.util.concurrent.ConcurrentHashMap;
 //}
 
 
-
-
-
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-@Component
-public class SignalingHandler extends TextWebSocketHandler {
-
-    // Map of roomId -> list of sessions (participants)
-    private final Map<String, List<WebSocketSession>> connections = new ConcurrentHashMap<>();
-
-    // Map of sessionId -> connection time
-    private final Map<String, Date> timeOnline = new ConcurrentHashMap<>();
-
-    // Map of roomId -> chat messages
-    private final Map<String, List<Map<String, String>>> messages = new ConcurrentHashMap<>();
-
-    private final ObjectMapper mapper = new ObjectMapper();
-
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        System.out.println("New connection established: " + session.getId());
-        session.sendMessage(new TextMessage("{\"type\":\"connection-success\",\"id\":\"" + session.getId() + "\"}"));
-    }
-
-
-    @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        Map<String, Object> msg = mapper.readValue(message.getPayload(), Map.class);
-        String type = (String) msg.get("type");
-
-        switch (type) {
-            case "join-call":
-                handleJoinCall(session, (String) msg.get("roomId"));
-                break;
-
-            case "signal":
-                handleSignal(session, (String) msg.get("toId"), (String) msg.get("data"));
-                break;
-
-            case "chat-message":
-                handleChatMessage(session, (String) msg.get("data"), (String) msg.get("sender"));
-                break;
-
-            default:
-                System.out.println("Unknown message type: " + type);
-        }
-    }
-
-    private void handleJoinCall(WebSocketSession session, String roomId) throws Exception {
-        connections.computeIfAbsent(roomId, k -> new ArrayList<>()).add(session);
-        timeOnline.put(session.getId(), new Date());
-
-        // Send existing users to the new user
-        List<String> existingUsers = new ArrayList<>();
-        for (WebSocketSession s : connections.get(roomId)) {
-            if (!s.getId().equals(session.getId())) existingUsers.add(s.getId());
-        }
-
-        Map<String, Object> existingMsg = Map.of(
-                "type", "existing-users",
-                "users", existingUsers
-        );
-        session.sendMessage(new TextMessage(mapper.writeValueAsString(existingMsg)));
-
-        // Notify others that a new user joined
-        for (WebSocketSession s : connections.get(roomId)) {
-            if (s.isOpen() && !s.getId().equals(session.getId())) {
-                s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
-            }
-        }
-
-        // Send chat history if available
-        if (messages.containsKey(roomId)) {
-            for (Map<String, String> msg : messages.get(roomId)) {
-                session.sendMessage(new TextMessage(mapper.writeValueAsString(msg)));
-            }
-        }
-
-        System.out.println("User " + session.getId() + " joined room " + roomId);
-    }
-
-    private void handleSignal(WebSocketSession sender, String toId, String data) throws Exception {
-        for (List<WebSocketSession> roomSessions : connections.values()) {
-            for (WebSocketSession s : roomSessions) {
-                if (s.getId().equals(toId) && s.isOpen()) {
-                    s.sendMessage(new TextMessage("{\"type\":\"signal\",\"fromId\":\"" + sender.getId() + "\",\"data\":" + data + "}"));
-                    return;
-                }
-            }
-        }
-    }
-
-    private void handleChatMessage(WebSocketSession sender, String data, String username) throws Exception {
-        String roomId = findRoomBySession(sender);
-        if (roomId == null) return;
-
-        messages.computeIfAbsent(roomId, k -> new ArrayList<>())
-                .add(Map.of("type", "chat-message", "data", data, "sender", username, "fromId", sender.getId()));
-
-        for (WebSocketSession s : connections.get(roomId)) {
-            if (s.isOpen()) {
-                s.sendMessage(new TextMessage("{\"type\":\"chat-message\",\"data\":\"" + data + "\",\"sender\":\"" + username + "\",\"fromId\":\"" + sender.getId() + "\"}"));
-            }
-        }
-    }
-
-    private String findRoomBySession(WebSocketSession session) {
-        for (Map.Entry<String, List<WebSocketSession>> entry : connections.entrySet()) {
-            if (entry.getValue().contains(session)) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        connections.forEach((roomId, sessions) -> {
-            if (sessions.remove(session)) {
-                sessions.forEach(s -> {
-                    try {
-                        if (s.isOpen()) {
-                            s.sendMessage(new TextMessage("{\"type\":\"user-left\",\"userId\":\"" + session.getId() + "\"}"));
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-        });
-        timeOnline.remove(session.getId());
-        System.out.println("User disconnected: " + session.getId());
-    }
-}
-
-
-
-
-
-
-
-
-
-
+//this works
+//
+//
+//import org.springframework.stereotype.Component;
+//import org.springframework.web.socket.*;
+//import org.springframework.web.socket.handler.TextWebSocketHandler;
+//import java.util.*;
+//import java.util.concurrent.ConcurrentHashMap;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+//
+//@Component
+//public class SignalingHandler extends TextWebSocketHandler {
+//
+//    // Map of roomId -> list of sessions (participants)
+//    private final Map<String, List<WebSocketSession>> connections = new ConcurrentHashMap<>();
+//
+//    // Map of sessionId -> connection time
+//    private final Map<String, Date> timeOnline = new ConcurrentHashMap<>();
+//
+//    // Map of roomId -> chat messages
+//    private final Map<String, List<Map<String, String>>> messages = new ConcurrentHashMap<>();
+//
+//    private final ObjectMapper mapper = new ObjectMapper();
+//
+//    @Override
+//    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+//        System.out.println("New connection established: " + session.getId());
+//        session.sendMessage(new TextMessage("{\"type\":\"connection-success\",\"id\":\"" + session.getId() + "\"}"));
+//    }
+//
+//
+//    @Override
+//    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+//        Map<String, Object> msg = mapper.readValue(message.getPayload(), Map.class);
+//        String type = (String) msg.get("type");
+//
+//        switch (type) {
+//            case "join-call":
+//                handleJoinCall(session, (String) msg.get("roomId"));
+//                break;
+//
+//            case "signal":
+//                handleSignal(session, (String) msg.get("toId"), (String) msg.get("data"));
+//                break;
+//
+//            case "chat-message":
+//                handleChatMessage(session, (String) msg.get("data"), (String) msg.get("sender"));
+//                break;
+//
+//            default:
+//                System.out.println("Unknown message type: " + type);
+//        }
+//    }
+//
+//    private void handleJoinCall(WebSocketSession session, String roomId) throws Exception {
+//        connections.computeIfAbsent(roomId, k -> new ArrayList<>()).add(session);
+//        timeOnline.put(session.getId(), new Date());
+//
+//        // Send existing users to the new user
+//        List<String> existingUsers = new ArrayList<>();
+//        for (WebSocketSession s : connections.get(roomId)) {
+//            if (!s.getId().equals(session.getId())) existingUsers.add(s.getId());
+//        }
+//
+//        Map<String, Object> existingMsg = Map.of(
+//                "type", "existing-users",
+//                "users", existingUsers
+//        );
+//        session.sendMessage(new TextMessage(mapper.writeValueAsString(existingMsg)));
+//
+//        // Notify others that a new user joined
+//        for (WebSocketSession s : connections.get(roomId)) {
+//            if (s.isOpen() && !s.getId().equals(session.getId())) {
+//                s.sendMessage(new TextMessage("{\"type\":\"user-joined\",\"userId\":\"" + session.getId() + "\"}"));
+//            }
+//        }
+//
+//        // Send chat history if available
+//        if (messages.containsKey(roomId)) {
+//            for (Map<String, String> msg : messages.get(roomId)) {
+//                session.sendMessage(new TextMessage(mapper.writeValueAsString(msg)));
+//            }
+//        }
+//
+//        System.out.println("User " + session.getId() + " joined room " + roomId);
+//    }
+//
+//    private void handleSignal(WebSocketSession sender, String toId, String data) throws Exception {
+//        for (List<WebSocketSession> roomSessions : connections.values()) {
+//            for (WebSocketSession s : roomSessions) {
+//                if (s.getId().equals(toId) && s.isOpen()) {
+//                    s.sendMessage(new TextMessage("{\"type\":\"signal\",\"fromId\":\"" + sender.getId() + "\",\"data\":" + data + "}"));
+//                    return;
+//                }
+//            }
+//        }
+//    }
+//
+//    private void handleChatMessage(WebSocketSession sender, String data, String username) throws Exception {
+//        String roomId = findRoomBySession(sender);
+//        if (roomId == null) return;
+//
+//        messages.computeIfAbsent(roomId, k -> new ArrayList<>())
+//                .add(Map.of("type", "chat-message", "data", data, "sender", username, "fromId", sender.getId()));
+//
+//        for (WebSocketSession s : connections.get(roomId)) {
+//            if (s.isOpen()) {
+//                s.sendMessage(new TextMessage("{\"type\":\"chat-message\",\"data\":\"" + data + "\",\"sender\":\"" + username + "\",\"fromId\":\"" + sender.getId() + "\"}"));
+//            }
+//        }
+//    }
+//
+//    private String findRoomBySession(WebSocketSession session) {
+//        for (Map.Entry<String, List<WebSocketSession>> entry : connections.entrySet()) {
+//            if (entry.getValue().contains(session)) {
+//                return entry.getKey();
+//            }
+//        }
+//        return null;
+//    }
+//
+//    @Override
+//    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+//        connections.forEach((roomId, sessions) -> {
+//            if (sessions.remove(session)) {
+//                sessions.forEach(s -> {
+//                    try {
+//                        if (s.isOpen()) {
+//                            s.sendMessage(new TextMessage("{\"type\":\"user-left\",\"userId\":\"" + session.getId() + "\"}"));
+//                        }
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                });
+//            }
+//        });
+//        timeOnline.remove(session.getId());
+//        System.out.println("User disconnected: " + session.getId());
+//    }
+//}
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 
