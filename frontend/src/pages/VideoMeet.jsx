@@ -542,19 +542,6 @@ import styles from '../styles/videoComponent.module.css';
 import SockJS from 'sockjs-client';
 import server from "../enviroment";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Badge, IconButton, TextField, Button } from '@mui/material';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
-import CallEndIcon from '@mui/icons-material/CallEnd';
-import MicIcon from '@mui/icons-material/Mic';
-import MicOffIcon from '@mui/icons-material/MicOff';
-import ScreenShareIcon from '@mui/icons-material/ScreenShare';
-import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
-import ChatIcon from '@mui/icons-material/Chat';
-import server from '../environment';
-import styles from "../styles/videoComponent.module.css";
-
 const peerConfigConnections = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 };
