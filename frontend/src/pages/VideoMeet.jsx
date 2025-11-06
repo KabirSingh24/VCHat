@@ -542,8 +542,9 @@ import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat';
 import styles from '../styles/videoComponent.module.css';
+import server from "../enviroment";
 
-const server_url = "ws://localhost:8080/ws"; // Your Java WebSocket URL
+const server_url = server; // Your Java WebSocket URL
 
 const peerConfigConnections = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -588,7 +589,7 @@ export default function VideoMeetComponent() {
   };
 
   const connectToServer = () => {
-    socketRef.current = new WebSocket(server_url);
+    socketRef.current = new SockJs(server_url+"/ws");
 
     socketRef.current.onopen = () => {
       console.log('Connected to WebSocket server');
