@@ -2011,7 +2011,7 @@ export default function VideoMeetComponent() {
       }));
     };
 
-    console.log("SOCK MSG:", msg);
+  
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       console.log("SOCK MSG:", msg);
