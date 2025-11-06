@@ -1524,19 +1524,25 @@
 //   );
 // }
 
-
+import React, { useEffect, useRef, useState } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import server from "../enviroment";
-import MicIcon from '@mui/icons-material/Mic'
-import React, { useEffect, useRef, useState } from "react";
-import { Badge, IconButton, TextField, Button } from "@mui/material";
+import {
+  Badge,
+  IconButton,
+  TextField,
+  Button,
+} from "@mui/material";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import CallEndIcon from "@mui/icons-material/CallEnd";
+import MicIcon from "@mui/icons-material/Mic";
+import MicOffIcon from "@mui/icons-material/MicOff";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
 import styles from "../styles/videoComponent.module.css";
+import server from "../enviroment";
 
 const server_url = server;
 
@@ -1550,12 +1556,7 @@ export default function VideoMeet() {
   const [connected, setConnected] = useState(false);
   const [screenShare, setScreenShare] = useState(false);
 
-  // ✅ create stomp client reference (persist between renders)
-  const stompClientRef = useRef(null);
-
-  useEffect(() => {
-    getPermissions();
-  }, []);
+  let stompClientRef = useRef(null);
 
   // ====== MEDIA PERMISSIONS ======
   const getPermissions = async () => {
@@ -1565,56 +1566,45 @@ export default function VideoMeet() {
         audio: true,
       });
       window.localStream = stream;
-      if (localVideoref.current) localVideoref.current.srcObject = stream;
+      if (localVideoref.current) {
+        localVideoref.current.srcObject = stream;
+      }
       setVideoAvailable(true);
       setAudioAvailable(true);
+      console.log("✅ Camera & mic permission granted");
     } catch (err) {
-      console.error("Media permission error:", err);
+      console.error("❌ Media permission error:", err);
       setVideoAvailable(false);
       setAudioAvailable(false);
     }
   };
 
-  // ====== CONNECT TO SPRING WEBSOCKET SERVER ======
+  useEffect(() => {
+    getPermissions();
+  }, []);
+
+  // ====== CONNECT TO BACKEND SOCKET ======
   const connectToSocketServer = () => {
+    const socket = new SockJS(`${server_url}/ws`);
     const client = new Client({
-      brokerURL: undefined, // SockJS fallback
-      webSocketFactory: () => new SockJS(server_url + "/ws"),
+      webSocketFactory: () => socket,
       reconnectDelay: 5000,
-      debug: (str) => console.log(str),
+      debug: (msg) => console.log(msg),
     });
 
     client.onConnect = () => {
-      console.log("✅ Connected to STOMP server");
+      console.log("🟢 Connected to STOMP server");
       setConnected(true);
 
-      // Subscribe to chat topic
       client.subscribe("/topic/chat", (message) => {
         const msg = JSON.parse(message.body);
         setMessages((prev) => [...prev, msg]);
       });
 
-      // Subscribe to signaling (WebRTC)
-      client.subscribe(`/topic/signal/${username}`, (signal) => {
-        const payload = JSON.parse(signal.body);
-        console.log("Signal:", payload);
-      });
-
-      // Subscribe to user join notifications
-      client.subscribe("/topic/user-joined", (msg) => {
-        const data = JSON.parse(msg.body);
-        console.log("User joined:", data);
-      });
-
-      // Notify backend that user joined
       client.publish({
         destination: "/app/join-call",
-        body: JSON.stringify({ username, room: "default" }),
+        body: JSON.stringify({ username }),
       });
-    };
-
-    client.onStompError = (frame) => {
-      console.error("Broker error:", frame.headers["message"]);
     };
 
     client.activate();
@@ -1623,10 +1613,13 @@ export default function VideoMeet() {
 
   // ====== CHAT SEND ======
   const sendMessage = () => {
-    const stompClient = stompClientRef.current;
-    if (stompClient && stompClient.connected && newMessage.trim() !== "") {
+    if (
+      stompClientRef.current &&
+      connected &&
+      newMessage.trim() !== ""
+    ) {
       const msgObj = { sender: username, content: newMessage };
-      stompClient.publish({
+      stompClientRef.current.publish({
         destination: "/app/send-chat",
         body: JSON.stringify(msgObj),
       });
@@ -1637,34 +1630,36 @@ export default function VideoMeet() {
 
   // ====== TOGGLE VIDEO ======
   const handleVideo = () => {
-    const track = window.localStream?.getVideoTracks()[0];
-    if (track) {
-      track.enabled = !track.enabled;
-      setVideoAvailable(track.enabled);
-    }
+    const videoTrack = window.localStream.getVideoTracks()[0];
+    videoTrack.enabled = !videoTrack.enabled;
+    setVideoAvailable(videoTrack.enabled);
   };
 
   // ====== TOGGLE AUDIO ======
   const handleAudio = () => {
-    const track = window.localStream?.getAudioTracks()[0];
-    if (track) {
-      track.enabled = !track.enabled;
-      setAudioAvailable(track.enabled);
-    }
+    const audioTrack = window.localStream.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+    setAudioAvailable(audioTrack.enabled);
   };
 
   // ====== SCREEN SHARE ======
   const handleScreen = async () => {
     if (!screenShare) {
-      const displayStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-      });
-      window.localStream = displayStream;
-      if (localVideoref.current) localVideoref.current.srcObject = displayStream;
+      try {
+        const displayStream =
+          await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+          });
+        localVideoref.current.srcObject = displayStream;
+        window.localStream = displayStream;
+        setScreenShare(true);
+      } catch (err) {
+        console.error("Screen share error:", err);
+      }
     } else {
-      await getPermissions();
+      getPermissions();
+      setScreenShare(false);
     }
-    setScreenShare(!screenShare);
   };
 
   // ====== END CALL ======
@@ -1674,7 +1669,6 @@ export default function VideoMeet() {
     setConnected(false);
   };
 
-  // ====== UI RENDER ======
   return (
     <div className={styles.videoContainer}>
       {!connected ? (
@@ -1716,11 +1710,19 @@ export default function VideoMeet() {
             </IconButton>
 
             <IconButton onClick={handleAudio}>
-              <MicIcon style={{ color: audioAvailable ? "white" : "red" }} />
+              {audioAvailable ? (
+                <MicIcon style={{ color: "white" }} />
+              ) : (
+                <MicOffIcon style={{ color: "red" }} />
+              )}
             </IconButton>
 
             <IconButton onClick={handleScreen}>
-              <ScreenShareIcon style={{ color: "white" }} />
+              {screenShare ? (
+                <StopScreenShareIcon style={{ color: "red" }} />
+              ) : (
+                <ScreenShareIcon style={{ color: "white" }} />
+              )}
             </IconButton>
 
             <IconButton onClick={handleEndCall}>
