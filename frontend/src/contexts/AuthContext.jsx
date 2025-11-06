@@ -1,6 +1,4 @@
 
-
-import server from "../enviroment";
 import React, { createContext, useState } from 'react';
 import axios from 'axios';
 import httpStatus from 'http-status';
