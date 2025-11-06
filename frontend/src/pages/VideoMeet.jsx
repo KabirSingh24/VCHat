@@ -586,7 +586,7 @@ export default function VideoMeetComponent() {
 
   // ------------------------ WebSocket & WebRTC ------------------------
   const connectWebSocket = () => {
-    socketRef.current = new WebSocket(server_url+"/ws");
+    socketRef.current = new SockJS(server_url+"/ws");
 
     socketRef.current.onopen = () => {
       console.log('Connected to WebSocket');
