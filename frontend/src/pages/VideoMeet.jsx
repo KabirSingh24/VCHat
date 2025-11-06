@@ -2354,7 +2354,7 @@ export default function VideoMeetComponent() {
 
   // 🛰️ Connect to signaling server
   const connectToSocketServer = () => {
-    const wsUrl = server_url.replace("http", "ws") + "/ws";
+    const wsUrl = server_url + "/ws";
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
 
@@ -2383,6 +2383,13 @@ export default function VideoMeetComponent() {
           console.log("⚠️ Unknown:", data);
       }
     };
+
+    setInterval(() => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30000);
+
 
     socket.onclose = () => {
       console.log("❌ Disconnected from signaling server");
