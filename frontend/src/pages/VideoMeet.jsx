@@ -1124,57 +1124,69 @@ export default function VideoMeetComponent() {
   // 🔹 5. UI
   // -----------------------------------
 
-  return (
-    <div>
-      {askForUsername ? (
-        <div>
-          <h2>Enter into Lobby</h2>
-          <TextField
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <Button variant="contained" onClick={connect}>
-            Connect
-          </Button>
-
-          {/* ✅ LOCAL VIDEO PREVIEW */}
+ return (
+  <div className={styles.container}>
+    {askForUsername ? (
+      <div className={styles.usernameContainer}>
+        <TextField
+          label="Enter your name"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <Button onClick={connect} variant="contained">
+          Join
+        </Button>
+      </div>
+    ) : (
+      <>
+        {/* Local video */}
+        <div className={styles.localVideoContainer}>
           <video
             ref={localVideoref}
             autoPlay
-            playsInline
             muted
-            style={{ width: "300px", borderRadius: "10px", background: "#000" }}
+            playsInline
+            className={styles.localVideo}
           />
         </div>
-      ) : (
-        <div className={styles.meetVideoContainer}>
-          {/* ✅ Always render local video on top */}
-          <video
-            ref={localVideoref}
-            autoPlay
-            playsInline
-            muted
-            className={styles.meetUserVideo}
-            style={{ background: "#000" }}
-          />
 
-          <div className={styles.conferenceView}>
-            {videos.map((video) => (
-              <div key={video.socketId}>
-                <video
-                  data-socket={video.socketId}
-                  ref={(ref) => {
-                    if (ref && video.stream) ref.srcObject = video.stream;
-                  }}
-                  autoPlay
-                  playsInline
-                />
-              </div>
-            ))}
-          </div>
+        {/* Remote videos */}
+        <div className={styles.remoteVideosContainer}>
+          {videos.map((v) => (
+            <video
+              key={v.socketId}
+              autoPlay
+              playsInline
+              ref={(el) => {
+                if (el && v.stream) el.srcObject = v.stream;
+              }}
+              className={styles.remoteVideo}
+            />
+          ))}
         </div>
-      )}
-    </div>
-  );
+
+        {/* Controls */}
+        <div className={styles.controls}>
+          <IconButton onClick={() => setVideo(!video)}>
+            {video ? <VideocamIcon /> : <VideocamOffIcon />}
+          </IconButton>
+          <IconButton onClick={() => setAudio(!audio)}>
+            {audio ? <MicIcon /> : <MicOffIcon />}
+          </IconButton>
+          <IconButton onClick={() => setScreen(!screen)}>
+            {screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+          </IconButton>
+          <IconButton color="error" onClick={() => window.location.reload()}>
+            <CallEndIcon />
+          </IconButton>
+          <IconButton onClick={() => setModal(!showModal)}>
+            <Badge badgeContent={newMessages} color="secondary">
+              <ChatIcon />
+            </Badge>
+          </IconButton>
+        </div>
+      </>
+    )}
+  </div>
+);
 }
