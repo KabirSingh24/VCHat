@@ -107,6 +107,7 @@ export default function Authentication() {
                                 name="username"
                                 value={name}
                                 autoFocus
+                                autoComplete="off"
                                 onChange={(e) => setName(e.target.value)}
           /> : <></>}
 
@@ -119,6 +120,7 @@ export default function Authentication() {
                                 name="username"
                                 value={username}
                                 autoFocus
+                                autoComplete="off"
                                 onChange={(e) => setUsername(e.target.value)}
 
                             />
@@ -130,6 +132,7 @@ export default function Authentication() {
                                 label="Password"
                                 value={password}
                                 type="password"
+                                autoComplete="new-password" 
                                 onChange={(e) => setPassword(e.target.value)}
 
                                 id="password"
