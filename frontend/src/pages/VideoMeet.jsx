@@ -1270,8 +1270,11 @@
 
 
 
+
 import SockJS from "sockjs-client";
-import Stomp from "stompjs";
+import { Client } from "@stomp/stompjs";
+import server from "../environment";
+
 import React, { useEffect, useRef, useState } from 'react'
 import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
@@ -1284,11 +1287,26 @@ import MicOffIcon from '@mui/icons-material/MicOff'
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 import ChatIcon from '@mui/icons-material/Chat'
-// import server from '../enviroment';
 
 
-const server_url = "https://vchat-rp52.onrender.com"; // your Spring Boot backend
-let stompClient = null;
+const server_url = server; // your Spring Boot backend
+// let stompClient = null;
+const stompClient = new Client({
+  brokerURL: undefined, // leave undefined when using SockJS
+  reconnectDelay: 5000,
+  webSocketFactory: () => new SockJS(server_url + "/ws"),
+  debug: (str) => console.log(str),
+});
+
+stompClient.onConnect = (frame) => {
+  console.log("Connected: ", frame);
+  stompClient.subscribe("/topic/chat", (message) => {
+    console.log("Chat:", message.body);
+  });
+};
+
+stompClient.activate();
+
 
 export default function VideoMeet() {
   const localVideoref = useRef();
