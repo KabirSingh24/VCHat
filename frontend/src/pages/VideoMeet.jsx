@@ -543,6 +543,7 @@ import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat';
 import styles from '../styles/videoComponent.module.css';
 import server from "../enviroment";
+import SockJS from 'sockjs-client';
 
 const server_url = server; // Your Java WebSocket URL
 
