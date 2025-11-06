@@ -1551,6 +1551,7 @@ import React, { useEffect, useRef, useState } from 'react'
 // import StopScreenShareIcon from '@mui/icons-material/StopScreenShare'
 // import ChatIcon from '@mui/icons-material/Chat'
 import server from '../enviroment';
+import SockJS from 'sockjs-client';
 // import { useNavigate } from 'react-router-dom';
 
 // const server_url = server;
@@ -2355,7 +2356,7 @@ export default function VideoMeetComponent() {
   // 🛰️ Connect to signaling server
   const connectToSocketServer = () => {
     const wsUrl = server_url + "/ws";
-    const socket = new WebSocket(wsUrl);
+    const socket = new SockJS(wsUrl);
     socketRef.current = socket;
 
     socket.onopen = () => {
