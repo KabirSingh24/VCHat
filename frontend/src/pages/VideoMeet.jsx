@@ -590,7 +590,7 @@ export default function VideoMeetComponent() {
   };
 
   const connectToServer = () => {
-    socketRef.current = new SockJs(server_url+"/ws");
+    socketRef.current = new SockJS(server_url+"/ws");
 
     socketRef.current.onopen = () => {
       console.log('Connected to WebSocket server');
