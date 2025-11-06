@@ -7,20 +7,6 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
 import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
-//@Configuration
-//@EnableWebSocket
-//public class WebSocketConfig implements WebSocketConfigurer {
-//
-//
-//    @Override
-//    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//        registry.addHandler(new SignalingHandler(),"/ws")
-//                .setAllowedOrigins("https://vchatpage.onrender.com")
-//                .withSockJS();
-//    }
-//}
-
-
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.*;
 
