@@ -527,7 +527,6 @@
 
 
 
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Badge, IconButton, TextField, Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -586,6 +585,7 @@ export default function VideoMeetComponent() {
   };
 
   const connect = () => {
+    if (!username.trim()) return;
     setAskForUsername(false);
     connectToSocketServer();
   };
@@ -595,6 +595,7 @@ export default function VideoMeetComponent() {
     socketRef.current = new SockJS("https://vchat-rp52.onrender.com/ws");
 
     socketRef.current.onopen = () => {
+      console.log("Connected to signaling server");
       socketRef.current.send(JSON.stringify({ type: "join-call", roomId }));
     };
 
@@ -604,6 +605,7 @@ export default function VideoMeetComponent() {
       switch (msg.type) {
         case "connection-success":
           socketIdRef.current = msg.id;
+          console.log("Connected:", msg.id);
           break;
 
         case "existing-users":
@@ -631,9 +633,7 @@ export default function VideoMeetComponent() {
       }
     };
 
-    socketRef.current.onclose = () => {
-      console.log("Socket closed");
-    };
+    socketRef.current.onclose = () => console.log("Socket closed");
   };
 
   const setupPeerConnection = async (id, isOfferer) => {
@@ -642,7 +642,6 @@ export default function VideoMeetComponent() {
     const pc = new RTCPeerConnection(peerConfigConnections);
     connections[id] = pc;
 
-    // Add local tracks
     window.localStream.getTracks().forEach((track) => pc.addTrack(track, window.localStream));
 
     pc.onicecandidate = (event) => {
@@ -650,7 +649,7 @@ export default function VideoMeetComponent() {
         socketRef.current.send(JSON.stringify({
           type: "signal",
           toId: id,
-          data: { ice: event.candidate }
+          data: JSON.stringify({ ice: event.candidate }) // ✅ send as string
         }));
       }
     };
@@ -671,28 +670,33 @@ export default function VideoMeetComponent() {
       socketRef.current.send(JSON.stringify({
         type: "signal",
         toId: id,
-        data: { sdp: pc.localDescription }
+        data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
       }));
     }
   };
 
   const handleSignal = async (fromId, data) => {
+    const parsed = typeof data === "string" ? JSON.parse(data) : data;
     if (!connections[fromId]) setupPeerConnection(fromId, false);
 
     const pc = connections[fromId];
-    if (data.sdp) {
-      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-      if (data.sdp.type === "offer") {
+    if (parsed.sdp) {
+      await pc.setRemoteDescription(new RTCSessionDescription(parsed.sdp));
+      if (parsed.sdp.type === "offer") {
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socketRef.current.send(JSON.stringify({
           type: "signal",
           toId: fromId,
-          data: { sdp: pc.localDescription }
+          data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
         }));
       }
-    } else if (data.ice) {
-      await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+    } else if (parsed.ice) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(parsed.ice));
+      } catch (e) {
+        console.error("ICE add error:", e);
+      }
     }
   };
 
