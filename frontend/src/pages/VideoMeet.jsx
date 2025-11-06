@@ -527,6 +527,324 @@
 
 
 
+// import React, { useEffect, useRef, useState } from 'react';
+// import { Badge, IconButton, TextField, Button } from '@mui/material';
+// import VideocamIcon from '@mui/icons-material/Videocam';
+// import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+// import CallEndIcon from '@mui/icons-material/CallEnd';
+// import MicIcon from '@mui/icons-material/Mic';
+// import MicOffIcon from '@mui/icons-material/MicOff';
+// import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+// import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
+// import ChatIcon from '@mui/icons-material/Chat';
+// import styles from '../styles/videoComponent.module.css';
+// import SockJS from 'sockjs-client';
+// import server from "../enviroment";
+
+// const peerConfigConnections = {
+//   iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+// };
+
+// let connections = {};
+
+// export default function VideoMeetComponent() {
+//   const localVideoref = useRef();
+//   const socketRef = useRef(null);
+//   const socketIdRef = useRef(null);
+
+//   const [videos, setVideos] = useState([]);
+//   const [messages, setMessages] = useState([]);
+//   const [message, setMessage] = useState("");
+//   const [newMessages, setNewMessages] = useState(0);
+//   const [username, setUsername] = useState("");
+//   const [askForUsername, setAskForUsername] = useState(true);
+
+//   const [videoAvailable, setVideoAvailable] = useState(true);
+//   const [audioAvailable, setAudioAvailable] = useState(true);
+//   const [video, setVideo] = useState(true);
+//   const [audio, setAudio] = useState(true);
+//   const [screen, setScreen] = useState(false);
+//   const [screenAvailable, setScreenAvailable] = useState(false);
+//   const [showModal, setModal] = useState(false);
+
+//   useEffect(() => {
+//     getPermissions();
+//   }, []);
+
+//   const getPermissions = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//       window.localStream = stream;
+//       if (localVideoref.current) localVideoref.current.srcObject = stream;
+//       setVideoAvailable(true);
+//       setAudioAvailable(true);
+//       setScreenAvailable(!!navigator.mediaDevices.getDisplayMedia);
+//     } catch (err) {
+//       console.error("Media access error:", err);
+//     }
+//   };
+
+//   const connect = () => {
+//     if (!username.trim()) return;
+//     setAskForUsername(false);
+//     connectToSocketServer();
+//   };
+
+//   const connectToSocketServer = () => {
+//     const roomId = window.location.pathname.split("/").pop();
+//     socketRef.current = new SockJS("https://vchat-rp52.onrender.com/ws");
+
+//     socketRef.current.onopen = () => {
+//       console.log("Connected to signaling server");
+//       socketRef.current.send(JSON.stringify({ type: "join-call", roomId }));
+//     };
+
+//     socketRef.current.onmessage = async (event) => {
+//       const msg = JSON.parse(event.data);
+
+//       switch (msg.type) {
+//         case "connection-success":
+//           socketIdRef.current = msg.id;
+//           console.log("Connected:", msg.id);
+//           break;
+
+//         case "existing-users":
+//           msg.users.forEach((id) => setupPeerConnection(id, true));
+//           break;
+
+//         case "user-joined":
+//           setupPeerConnection(msg.userId, false);
+//           break;
+
+//         case "signal":
+//           await handleSignal(msg.fromId, msg.data);
+//           break;
+
+//         case "user-left":
+//           removeVideo(msg.userId);
+//           break;
+
+//         case "chat-message":
+//           addMessage(msg.data, msg.sender);
+//           break;
+
+//         default:
+//           break;
+//       }
+//     };
+
+//     socketRef.current.onclose = () => console.log("Socket closed");
+//   };
+
+//   const setupPeerConnection = async (id, isOfferer) => {
+//     if (connections[id]) return;
+
+//     const pc = new RTCPeerConnection(peerConfigConnections);
+//     connections[id] = pc;
+
+//     window.localStream.getTracks().forEach((track) => pc.addTrack(track, window.localStream));
+
+//     pc.onicecandidate = (event) => {
+//       if (event.candidate) {
+//         socketRef.current.send(JSON.stringify({
+//           type: "signal",
+//           toId: id,
+//           data: JSON.stringify({ ice: event.candidate }) // ✅ send as string
+//         }));
+//       }
+//     };
+
+//     pc.ontrack = (event) => {
+//       setVideos((prev) => {
+//         const exists = prev.find((v) => v.socketId === id);
+//         if (exists) {
+//           return prev.map((v) => v.socketId === id ? { ...v, stream: event.streams[0] } : v);
+//         }
+//         return [...prev, { socketId: id, stream: event.streams[0] }];
+//       });
+//     };
+
+//     if (isOfferer) {
+//       const offer = await pc.createOffer();
+//       await pc.setLocalDescription(offer);
+//       socketRef.current.send(JSON.stringify({
+//         type: "signal",
+//         toId: id,
+//         data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
+//       }));
+//     }
+//   };
+
+//   const handleSignal = async (fromId, data) => {
+//     const parsed = typeof data === "string" ? JSON.parse(data) : data;
+//     if (!connections[fromId]) setupPeerConnection(fromId, false);
+
+//     const pc = connections[fromId];
+//     if (parsed.sdp) {
+//       await pc.setRemoteDescription(new RTCSessionDescription(parsed.sdp));
+//       if (parsed.sdp.type === "offer") {
+//         const answer = await pc.createAnswer();
+//         await pc.setLocalDescription(answer);
+//         socketRef.current.send(JSON.stringify({
+//           type: "signal",
+//           toId: fromId,
+//           data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
+//         }));
+//       }
+//     } else if (parsed.ice) {
+//       try {
+//         await pc.addIceCandidate(new RTCIceCandidate(parsed.ice));
+//       } catch (e) {
+//         console.error("ICE add error:", e);
+//       }
+//     }
+//   };
+
+//   const removeVideo = (id) => {
+//     setVideos((prev) => prev.filter((v) => v.socketId !== id));
+//     if (connections[id]) {
+//       connections[id].close();
+//       delete connections[id];
+//     }
+//   };
+
+//   const addMessage = (data, sender) => {
+//     setMessages((prev) => [...prev, { data, sender }]);
+//     setNewMessages((prev) => prev + 1);
+//   };
+
+//   const sendMessage = () => {
+//     if (!message.trim()) return;
+//     socketRef.current.send(JSON.stringify({
+//       type: "chat-message",
+//       data: message,
+//       sender: username
+//     }));
+//     setMessage("");
+//   };
+
+//   const handleVideo = () => setVideo(!video);
+//   const handleAudio = () => setAudio(!audio);
+//   const handleScreen = () => setScreen(!screen);
+//   const handleEndCall = () => {
+//     try {
+//       localVideoref.current.srcObject?.getTracks().forEach((t) => t.stop());
+//     } catch (e) {}
+//     window.location.href = "/";
+//   };
+
+//   return (
+//     <div>
+//       {askForUsername ? (
+//         <div>
+//           <h2>Enter into Lobby</h2>
+//           <TextField
+//             id="outlined-basic"
+//             label="Username"
+//             value={username}
+//             onChange={(e) => setUsername(e.target.value)}
+//             variant="outlined"
+//           />
+//           <Button variant="contained" onClick={connect}>Connect</Button>
+
+//           <div>
+//             <video ref={localVideoref} autoPlay muted></video>
+//           </div>
+//         </div>
+//       ) : (
+//         <div className={styles.meetVideoContainer}>
+//           {showModal && (
+//             <div className={styles.chatRoom}>
+//               <div className={styles.chatContainer}>
+//                 <h1>Chat</h1>
+//                 <div className={styles.chattingDisplay}>
+//                   {messages.length ? messages.map((item, index) => (
+//                     <div style={{ marginBottom: "20px" }} key={index}>
+//                       <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+//                       <p>{item.data}</p>
+//                     </div>
+//                   )) : <p>No Messages Yet</p>}
+//                 </div>
+//                 <div className={styles.chattingArea}>
+//                   <TextField
+//                     value={message}
+//                     onChange={(e) => setMessage(e.target.value)}
+//                     id="outlined-basic"
+//                     label="Enter Your chat"
+//                     variant="outlined"
+//                   />
+//                   <Button variant="contained" onClick={sendMessage}>Send</Button>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+
+//           <div className={styles.buttonContainers}>
+//             <IconButton onClick={handleVideo} style={{ color: "white" }}>
+//               {video ? <VideocamIcon /> : <VideocamOffIcon />}
+//             </IconButton>
+//             <IconButton onClick={handleEndCall} style={{ color: "red" }}>
+//               <CallEndIcon />
+//             </IconButton>
+//             <IconButton onClick={handleAudio} style={{ color: "white" }}>
+//               {audio ? <MicIcon /> : <MicOffIcon />}
+//             </IconButton>
+//             {screenAvailable && (
+//               <IconButton onClick={handleScreen} style={{ color: "white" }}>
+//                 {screen ? <ScreenShareIcon /> : <StopScreenShareIcon />}
+//               </IconButton>
+//             )}
+//             <Badge badgeContent={newMessages} max={999} color="orange">
+//               <IconButton onClick={() => setModal(!showModal)} style={{ color: "white" }}>
+//                 <ChatIcon />
+//               </IconButton>
+//             </Badge>
+//           </div>
+
+//           <video className={styles.meetUserVideo} ref={localVideoref} autoPlay muted></video>
+
+//           <div className={styles.conferenceView}>
+//             {videos.map((video) => (
+//               <div key={video.socketId}>
+//                 <video
+//                   data-socket={video.socketId}
+//                   ref={(ref) => {
+//                     if (ref && video.stream) {
+//                       ref.srcObject = video.stream;
+//                     }
+//                   }}
+//                   autoPlay
+//                 />
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Badge, IconButton, TextField, Button } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -568,171 +886,329 @@ export default function VideoMeetComponent() {
   const [showModal, setModal] = useState(false);
 
   useEffect(() => {
+    console.log("[useEffect] component mounted -> getPermissions()");
     getPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --------------------
+  // Permissions & local stream
+  // --------------------
   const getPermissions = async () => {
+    console.log("[getPermissions] requesting media...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log("[getPermissions] got stream:", stream);
       window.localStream = stream;
-      if (localVideoref.current) localVideoref.current.srcObject = stream;
+
+      // small timeout to ensure video element is mounted before attaching stream
+      setTimeout(() => {
+        if (localVideoref.current) {
+          localVideoref.current.srcObject = stream;
+          console.log("[getPermissions] attached local stream to localVideoref");
+        } else {
+          console.warn("[getPermissions] localVideoref is null when trying to attach stream");
+        }
+      }, 150);
+
       setVideoAvailable(true);
       setAudioAvailable(true);
       setScreenAvailable(!!navigator.mediaDevices.getDisplayMedia);
+      console.log("[getPermissions] videoAvailable:", true, "audioAvailable:", true, "screenAvailable:", !!navigator.mediaDevices.getDisplayMedia);
     } catch (err) {
-      console.error("Media access error:", err);
+      console.error("[getPermissions] Media access error:", err);
+      setVideoAvailable(false);
+      setAudioAvailable(false);
+      setScreenAvailable(false);
     }
   };
 
+  // --------------------
+  // Connect / Socket (SockJS)
+  // --------------------
   const connect = () => {
-    if (!username.trim()) return;
+    if (!username.trim()) {
+      console.warn("[connect] username empty, refusing to connect");
+      return;
+    }
+    console.log("[connect] username:", username);
     setAskForUsername(false);
     connectToSocketServer();
   };
 
   const connectToSocketServer = () => {
     const roomId = window.location.pathname.split("/").pop();
-    socketRef.current = new SockJS("https://vchat-rp52.onrender.com/ws");
+    console.log("[connectToSocketServer] connecting to", `${server}/ws`, "roomId:", roomId);
+    socketRef.current = new SockJS(`${server}/ws`);
 
     socketRef.current.onopen = () => {
-      console.log("Connected to signaling server");
-      socketRef.current.send(JSON.stringify({ type: "join-call", roomId }));
+      console.log("[SockJS] onopen - connected to signaling server");
+      try {
+        socketRef.current.send(JSON.stringify({ type: "join-call", roomId }));
+        console.log("[SockJS] sent join-call", { type: "join-call", roomId });
+      } catch (e) {
+        console.error("[SockJS] send error on join-call:", e);
+      }
     };
 
     socketRef.current.onmessage = async (event) => {
-      const msg = JSON.parse(event.data);
+      console.log("[SockJS] onmessage RAW:", event.data);
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        console.error("[SockJS] failed to parse incoming message:", e, "raw:", event.data);
+        return;
+      }
 
+      console.log("[SockJS] parsed message:", msg);
       switch (msg.type) {
         case "connection-success":
           socketIdRef.current = msg.id;
-          console.log("Connected:", msg.id);
+          console.log("[SockJS] connection-success -> socketIdRef:", socketIdRef.current);
           break;
 
         case "existing-users":
+          console.log("[SockJS] existing-users:", msg.users);
           msg.users.forEach((id) => setupPeerConnection(id, true));
           break;
 
         case "user-joined":
+          console.log("[SockJS] user-joined:", msg.userId);
           setupPeerConnection(msg.userId, false);
           break;
 
         case "signal":
+          console.log("[SockJS] signal received from:", msg.fromId, "data:", msg.data);
           await handleSignal(msg.fromId, msg.data);
           break;
 
         case "user-left":
+          console.log("[SockJS] user-left:", msg.userId);
           removeVideo(msg.userId);
           break;
 
         case "chat-message":
+          console.log("[SockJS] chat-message:", msg.data, "from:", msg.sender);
           addMessage(msg.data, msg.sender);
           break;
 
         default:
+          console.warn("[SockJS] unknown message type:", msg.type);
           break;
       }
     };
 
-    socketRef.current.onclose = () => console.log("Socket closed");
+    socketRef.current.onclose = () => {
+      console.log("[SockJS] connection closed");
+    };
+
+    socketRef.current.onerror = (err) => {
+      console.error("[SockJS] error", err);
+    };
   };
 
+  // --------------------
+  // Peer connection setup
+  // --------------------
   const setupPeerConnection = async (id, isOfferer) => {
-    if (connections[id]) return;
+    console.log("[setupPeerConnection] id:", id, "isOfferer:", isOfferer);
+    if (connections[id]) {
+      console.log("[setupPeerConnection] connection already exists for id:", id);
+      return;
+    }
 
     const pc = new RTCPeerConnection(peerConfigConnections);
     connections[id] = pc;
+    console.log("[setupPeerConnection] created RTCPeerConnection for", id);
 
-    window.localStream.getTracks().forEach((track) => pc.addTrack(track, window.localStream));
+    // Add local tracks (if available)
+    if (window.localStream) {
+      const tracks = window.localStream.getTracks();
+      console.log("[setupPeerConnection] adding local tracks to pc for", id, "tracks:", tracks);
+      tracks.forEach((track) => pc.addTrack(track, window.localStream));
+    } else {
+      console.warn("[setupPeerConnection] window.localStream is not available when adding tracks for", id);
+    }
 
+    // ICE candidates -> send to remote
     pc.onicecandidate = (event) => {
+      console.log("[pc.onicecandidate] id:", id, "candidate:", event.candidate);
       if (event.candidate) {
-        socketRef.current.send(JSON.stringify({
-          type: "signal",
-          toId: id,
-          data: JSON.stringify({ ice: event.candidate }) // ✅ send as string
-        }));
+        const dataStr = JSON.stringify({ ice: event.candidate });
+        try {
+          socketRef.current.send(JSON.stringify({
+            type: "signal",
+            toId: id,
+            data: dataStr
+          }));
+          console.log("[pc.onicecandidate] sent ICE to", id, "payload:", dataStr);
+        } catch (e) {
+          console.error("[pc.onicecandidate] send error:", e);
+        }
       }
     };
 
+    // Remote tracks -> attach to UI
     pc.ontrack = (event) => {
+      console.log("[pc.ontrack] id:", id, "streams:", event.streams);
+      const remoteStream = event.streams && event.streams[0] ? event.streams[0] : null;
+      if (!remoteStream) {
+        console.warn("[pc.ontrack] no remote stream in event for", id);
+        return;
+      }
+
       setVideos((prev) => {
         const exists = prev.find((v) => v.socketId === id);
         if (exists) {
-          return prev.map((v) => v.socketId === id ? { ...v, stream: event.streams[0] } : v);
+          console.log("[pc.ontrack] updating existing remote stream for", id);
+          return prev.map((v) => (v.socketId === id ? { ...v, stream: remoteStream } : v));
         }
-        return [...prev, { socketId: id, stream: event.streams[0] }];
+        console.log("[pc.ontrack] adding new remote stream for", id);
+        return [...prev, { socketId: id, stream: remoteStream }];
       });
     };
 
+    // Optional logging for state changes
+    pc.onconnectionstatechange = () => {
+      console.log("[pc.onconnectionstatechange] id:", id, "state:", pc.connectionState);
+    };
+
+    // If we are the offerer -> create offer and send it
     if (isOfferer) {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socketRef.current.send(JSON.stringify({
-        type: "signal",
-        toId: id,
-        data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
-      }));
-    }
-  };
-
-  const handleSignal = async (fromId, data) => {
-    const parsed = typeof data === "string" ? JSON.parse(data) : data;
-    if (!connections[fromId]) setupPeerConnection(fromId, false);
-
-    const pc = connections[fromId];
-    if (parsed.sdp) {
-      await pc.setRemoteDescription(new RTCSessionDescription(parsed.sdp));
-      if (parsed.sdp.type === "offer") {
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+      try {
+        console.log("[setupPeerConnection] creating offer for", id);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        const dataStr = JSON.stringify({ sdp: pc.localDescription });
         socketRef.current.send(JSON.stringify({
           type: "signal",
-          toId: fromId,
-          data: JSON.stringify({ sdp: pc.localDescription }) // ✅ send as string
+          toId: id,
+          data: dataStr
         }));
-      }
-    } else if (parsed.ice) {
-      try {
-        await pc.addIceCandidate(new RTCIceCandidate(parsed.ice));
+        console.log("[setupPeerConnection] sent offer to", id, "offer:", dataStr);
       } catch (e) {
-        console.error("ICE add error:", e);
+        console.error("[setupPeerConnection] error creating/sending offer for", id, e);
       }
     }
   };
 
+  // --------------------
+  // Handle incoming signals (sdp / ice)
+  // --------------------
+  const handleSignal = async (fromId, data) => {
+    console.log("[handleSignal] fromId:", fromId, "raw data:", data);
+    // data is a stringified JSON (we send it as string to work well with SockJS/Spring)
+    let parsed;
+    try {
+      parsed = typeof data === "string" ? JSON.parse(data) : data;
+    } catch (e) {
+      console.error("[handleSignal] failed to parse data:", e, "data:", data);
+      return;
+    }
+    console.log("[handleSignal] parsed data:", parsed);
+
+    if (!connections[fromId]) {
+      console.log("[handleSignal] no pc for", fromId, "- creating one as answerer");
+      await setupPeerConnection(fromId, false);
+    }
+
+    const pc = connections[fromId];
+    if (!pc) {
+      console.error("[handleSignal] still no pc for", fromId);
+      return;
+    }
+
+    try {
+      if (parsed.sdp) {
+        console.log("[handleSignal] setting remote description for", fromId, "sdp.type:", parsed.sdp.type);
+        await pc.setRemoteDescription(new RTCSessionDescription(parsed.sdp));
+        if (parsed.sdp.type === "offer") {
+          console.log("[handleSignal] creating answer for", fromId);
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          const dataStr = JSON.stringify({ sdp: pc.localDescription });
+          socketRef.current.send(JSON.stringify({
+            type: "signal",
+            toId: fromId,
+            data: dataStr
+          }));
+          console.log("[handleSignal] sent answer to", fromId, "answer:", dataStr);
+        }
+      } else if (parsed.ice) {
+        console.log("[handleSignal] adding ICE candidate for", fromId, parsed.ice);
+        await pc.addIceCandidate(new RTCIceCandidate(parsed.ice));
+        console.log("[handleSignal] added ICE candidate for", fromId);
+      }
+    } catch (e) {
+      console.error("[handleSignal] error while handling signal for", fromId, e);
+    }
+  };
+
+  // --------------------
+  // Helpers: remove video, chat
+  // --------------------
   const removeVideo = (id) => {
+    console.log("[removeVideo] id:", id);
     setVideos((prev) => prev.filter((v) => v.socketId !== id));
     if (connections[id]) {
-      connections[id].close();
+      try {
+        connections[id].close();
+        console.log("[removeVideo] closed pc for", id);
+      } catch (e) {
+        console.error("[removeVideo] error closing pc for", id, e);
+      }
       delete connections[id];
     }
   };
 
   const addMessage = (data, sender) => {
+    console.log("[addMessage] raw:", data, "from:", sender);
     setMessages((prev) => [...prev, { data, sender }]);
     setNewMessages((prev) => prev + 1);
   };
 
   const sendMessage = () => {
-    if (!message.trim()) return;
-    socketRef.current.send(JSON.stringify({
-      type: "chat-message",
-      data: message,
-      sender: username
-    }));
+    if (!message.trim()) {
+      console.warn("[sendMessage] message empty, ignoring");
+      return;
+    }
+    if (!socketRef.current) {
+      console.warn("[sendMessage] socketRef.current is null");
+      return;
+    }
+    try {
+      socketRef.current.send(JSON.stringify({
+        type: "chat-message",
+        data: message,
+        sender: username
+      }));
+      console.log("[sendMessage] sent chat-message:", message);
+    } catch (e) {
+      console.error("[sendMessage] send error:", e);
+    }
     setMessage("");
   };
 
+  // --------------------
+  // Simple toggles & end call
+  // --------------------
   const handleVideo = () => setVideo(!video);
   const handleAudio = () => setAudio(!audio);
   const handleScreen = () => setScreen(!screen);
   const handleEndCall = () => {
     try {
-      localVideoref.current.srcObject?.getTracks().forEach((t) => t.stop());
-    } catch (e) {}
+      localVideoref.current?.srcObject?.getTracks().forEach((t) => t.stop());
+      console.log("[handleEndCall] stopped local tracks");
+    } catch (e) {
+      console.error("[handleEndCall] error stopping tracks", e);
+    }
     window.location.href = "/";
   };
 
+  // --------------------
+  // Render (UI unchanged except ensures playsInline in video tag)
+  // --------------------
   return (
     <div>
       {askForUsername ? (
@@ -748,7 +1224,8 @@ export default function VideoMeetComponent() {
           <Button variant="contained" onClick={connect}>Connect</Button>
 
           <div>
-            <video ref={localVideoref} autoPlay muted></video>
+            {/* Local preview - playsInline & muted help autoplay */}
+            <video ref={localVideoref} autoPlay playsInline muted style={{ width: "100%" }}></video>
           </div>
         </div>
       ) : (
@@ -801,7 +1278,8 @@ export default function VideoMeetComponent() {
             </Badge>
           </div>
 
-          <video className={styles.meetUserVideo} ref={localVideoref} autoPlay muted></video>
+          {/* Local preview again in meeting view (kept as per your UI) */}
+          <video className={styles.meetUserVideo} ref={localVideoref} autoPlay playsInline muted></video>
 
           <div className={styles.conferenceView}>
             {videos.map((video) => (
@@ -810,7 +1288,14 @@ export default function VideoMeetComponent() {
                   data-socket={video.socketId}
                   ref={(ref) => {
                     if (ref && video.stream) {
-                      ref.srcObject = video.stream;
+                      try {
+                        ref.srcObject = video.stream;
+                        ref.autoplay = true;
+                        ref.playsInline = true;
+                        console.log("[render] attached remote stream to element for", video.socketId);
+                      } catch (e) {
+                        console.error("[render] error attaching remote stream for", video.socketId, e);
+                      }
                     }
                   }}
                   autoPlay
