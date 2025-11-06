@@ -2332,6 +2332,16 @@ export default function VideoMeetComponent() {
     // eslint-disable-next-line
   }, []);
 
+  const safeSend = (obj) => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(obj));
+    } else {
+      console.warn("⏳ WebSocket not ready, delaying send...");
+      setTimeout(() => safeSend(obj), 300); // retry in 300ms
+    }
+  };
+
+
   const getUserMedia = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
