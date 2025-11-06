@@ -551,9 +551,9 @@ const peerConfigConnections = {
 export default function VideoMeetComponent() {
   const localVideoRef = useRef();
   const socketRef = useRef();
-  const [peers, setPeers] = useState({}); // id -> RTCPeerConnection
+  const [peers, setPeers] = useState({}); // socketId -> RTCPeerConnection
   const [remoteVideos, setRemoteVideos] = useState([]); // [{id, stream}]
-  
+
   const [video, setVideo] = useState(true);
   const [audio, setAudio] = useState(true);
   const [screen, setScreen] = useState(false);
@@ -567,9 +567,7 @@ export default function VideoMeetComponent() {
 
   // ------------------------ User Media ------------------------
   useEffect(() => {
-    if (!askUsername) {
-      initMedia();
-    }
+    if (!askUsername) initMedia();
   }, [askUsername]);
 
   const initMedia = async () => {
@@ -597,6 +595,12 @@ export default function VideoMeetComponent() {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
+        case 'existing-users':
+          for (let id of data.users) {
+            if (id !== socketRef.current.id) await handleUserJoined(id);
+          }
+          break;
+
         case 'user-joined':
           await handleUserJoined(data.userId);
           break;
@@ -621,7 +625,7 @@ export default function VideoMeetComponent() {
   };
 
   const handleUserJoined = async (id) => {
-    if (peers[id]) return; // already connected
+    if (peers[id]) return;
 
     const pc = new RTCPeerConnection(peerConfigConnections);
     window.localStream.getTracks().forEach(track => pc.addTrack(track, window.localStream));
