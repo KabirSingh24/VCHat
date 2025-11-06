@@ -2,94 +2,197 @@ import axios from "axios";
 import httpStatus from "http-status";
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import React from "react";
 import server from "../enviroment";
+import React, { createContext, useState } from 'react';
+import axios from 'axios';
+import httpStatus from 'http-status';
+import { useNavigate } from 'react-router-dom';
 
+// Replace with your actual backend server URL
+export const server = "https://vchat-rp52.onrender.com";
 
-
-export const AuthContext = React.createContext({});
-
-const client = axios.create({
-    baseURL: `${server}/auth`,
-});
+export const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-    const authContext = useContext(AuthContext);
-
-    const { userData, setUserData } = useState(authContext);
-
+    const [userData, setUserData] = useState({});
     const router = useNavigate();
 
+    // Axios client
+    const client = axios.create({
+        baseURL: `${server}/auth`,
+    });
+
+    // Registration
     const handlerRegister = async (name, username, password) => {
         try {
-            let request = await client.post('/registry', {
-                name: name,
-                username: username,
-                password: password,
-            });
-            if (request.status === httpStatus.CREATED) {
-                return request.data;
-            }
+            const response = await client.post('/registry', { name, username, password });
+            if (response.status === httpStatus.CREATED) return response.data;
         } catch (err) {
             if (err.response?.status === httpStatus.CONFLICT) {
-                throw new Error(err.response.data); // throw it as an Error
+                throw new Error(err.response.data);
             }
             throw err;
         }
-    }
+    };
 
-
+    // Login
     const handleLogin = async (username, password) => {
         try {
-            let request = await client.post('/login', {
-                username: username,
-                password: password,
-            });
-
-            if (request.status === 200) {
-                window.localStorage.setItem("token", request.data.token);
+            const response = await client.post('/login', { username, password });
+            if (response.status === 200) {
+                window.localStorage.setItem("token", response.data.token);
                 router("/home");
                 return "Login Successful";
             }
-        } catch (error) {
-            if (error.response && error.response.data && error.response.data.error) {
-                return Promise.reject(error.response.data.error);
-            } else {
-                return Promise.reject("An unexpected error occurred");
-            }
+        } catch (err) {
+            if (err.response?.data?.error) return Promise.reject(err.response.data.error);
+            return Promise.reject("An unexpected error occurred");
         }
-    }
-    // const getHistoryOfUser = async () => {
-    //     const token = localStorage.getItem("token");
-    //     const res = await fetch(`${server}/auth/getUserHistory`);
-    //     const data = await res.json();
-    //     console.log(data);
-    // };
+    };
 
+    // Get user history
     const getHistoryOfUser = async () => {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${server}/auth/getUserHistory?token=${token}`);
-        const data = await res.json();
-        console.log(data);
-        return data; // return the fetched history
+        if (!token) return [];
+        try {
+            const res = await fetch(`${server}/auth/getUserHistory?token=${token}`);
+            const data = await res.json();
+            return data;
+        } catch (err) {
+            console.error("Failed to fetch history:", err);
+            return [];
+        }
     };
 
+    // Add meeting code to user history
     const addToUserHistory = async (meetingCode) => {
         const token = localStorage.getItem("token");
-        await fetch(`${server}/auth/addUserHistory`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, meeting_code: meetingCode })
-        });
+        if (!token) return;
+        try {
+            await fetch(`${server}/auth/addUserHistory`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, meeting_code: meetingCode })
+            });
+        } catch (err) {
+            console.error("Failed to add to history:", err);
+        }
     };
 
+    const contextData = {
+        userData,
+        setUserData,
+        handlerRegister,
+        handleLogin,
+        getHistoryOfUser,
+        addToUserHistory,
+    };
 
-    const data = {
-        userData, setUserData, handlerRegister, handleLogin, addToUserHistory, getHistoryOfUser
-    }
     return (
-        <AuthContext.Provider value={data}>
+        <AuthContext.Provider value={contextData}>
             {children}
         </AuthContext.Provider>
-    )
-}
+    );
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export const AuthContext = React.createContext({});
+
+// const client = axios.create({
+//     baseURL: `${server}/auth`,
+// });
+
+// export const AuthProvider = ({ children }) => {
+//     const authContext = useContext(AuthContext);
+
+//     const { userData, setUserData } = useState(authContext);
+
+//     const router = useNavigate();
+
+//     const handlerRegister = async (name, username, password) => {
+//         try {
+//             let request = await client.post('/registry', {
+//                 name: name,
+//                 username: username,
+//                 password: password,
+//             });
+//             if (request.status === httpStatus.CREATED) {
+//                 return request.data;
+//             }
+//         } catch (err) {
+//             if (err.response?.status === httpStatus.CONFLICT) {
+//                 throw new Error(err.response.data); // throw it as an Error
+//             }
+//             throw err;
+//         }
+//     }
+
+
+//     const handleLogin = async (username, password) => {
+//         try {
+//             let request = await client.post('/login', {
+//                 username: username,
+//                 password: password,
+//             });
+
+//             if (request.status === 200) {
+//                 window.localStorage.setItem("token", request.data.token);
+//                 router("/home");
+//                 return "Login Successful";
+//             }
+//         } catch (error) {
+//             if (error.response && error.response.data && error.response.data.error) {
+//                 return Promise.reject(error.response.data.error);
+//             } else {
+//                 return Promise.reject("An unexpected error occurred");
+//             }
+//         }
+//     }
+//     // const getHistoryOfUser = async () => {
+//     //     const token = localStorage.getItem("token");
+//     //     const res = await fetch(`${server}/auth/getUserHistory`);
+//     //     const data = await res.json();
+//     //     console.log(data);
+//     // };
+
+//     const getHistoryOfUser = async () => {
+//         const token = localStorage.getItem("token");
+//         const res = await fetch(`${server}/auth/getUserHistory?token=${token}`);
+//         const data = await res.json();
+//         console.log(data);
+//         return data; // return the fetched history
+//     };
+
+//     const addToUserHistory = async (meetingCode) => {
+//         const token = localStorage.getItem("token");
+//         await fetch(`${server}/auth/addUserHistory`, {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({ token, meeting_code: meetingCode })
+//         });
+//     };
+
+
+//     const data = {
+//         userData, setUserData, handlerRegister, handleLogin, addToUserHistory, getHistoryOfUser
+//     }
+//     return (
+//         <AuthContext.Provider value={data}>
+//             {children}
+//         </AuthContext.Provider>
+//     )
+// }
