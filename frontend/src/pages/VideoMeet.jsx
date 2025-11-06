@@ -2652,10 +2652,15 @@ export default function VideoMeetComponent() {
     const clients = Array.from(data.clients).filter((id) => id !== socketRef.current.id);
     console.log("👥 Users in room:", clients);
 
-    for (let id of clients) {
-      if (!connections[id]) {
-        await createOffer(id);
+    if (clients.length > 0) {
+      console.log("📡 Creating offers to existing clients:", clients);
+      for (let id of clients) {
+        if (!connections[id]) {
+          await createOffer(id);
+        }
       }
+    } else {
+      console.log("🕓 First user in room, waiting for others...");
     }
   };
 
