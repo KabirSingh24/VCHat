@@ -143,9 +143,11 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         System.out.println("New connection established: " + session.getId());
+        session.sendMessage(new TextMessage("{\"type\":\"connection-success\",\"id\":\"" + session.getId() + "\"}"));
     }
+
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
