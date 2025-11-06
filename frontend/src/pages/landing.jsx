@@ -11,6 +11,9 @@ export default function LandingPage() {
                     <h2>VCHat</h2>
                 </div>
                 <div className='navlist'>
+                    <p onClick={() => {
+                        router("/aljk23")
+                    }}>Join as Guest</p>
                     <p onClick={() => router("/auth")}>Register</p>
                     <p onClick={() => router("/auth")}>Login</p>
                 </div>
