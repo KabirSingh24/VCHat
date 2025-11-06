@@ -1799,85 +1799,196 @@ export default function VideoMeetComponent() {
     })
   }
 
+  // let gotMessageFromServer = (fromId, message) => {
+  //   var signal = JSON.parse(message)
+
+  //   if (fromId !== socketIdRef.current) {
+  //     if (signal.sdp) {
+  //       connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+  //         if (signal.sdp.type === 'offer') {
+  //           connections[fromId].createAnswer().then((description) => {
+  //             connections[fromId].setLocalDescription(description).then(() => {
+  //               socketRef.current.send(JSON.stringify({
+  //                 type: "signal",
+  //                 toId: fromId,
+  //                 data: { sdp: connections[fromId].localDescription }
+  //               }));
+  //             }).catch(e => console.log(e))
+  //           }).catch(e => console.log(e))
+  //         }
+  //       }).catch(e => console.log(e))
+  //     }
+
+  //     if (signal.ice) {
+  //       connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
+  //     }
+  //   }
+  // }
+
+
   let gotMessageFromServer = (fromId, message) => {
-    var signal = JSON.parse(message)
+    const signal = JSON.parse(message);
 
-    if (fromId !== socketIdRef.current) {
-      if (signal.sdp) {
-        connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+    // ignore messages from self
+    if (fromId === socketIdRef.current) return;
+
+    // SDP
+    if (signal.sdp) {
+      connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp))
+        .then(() => {
           if (signal.sdp.type === 'offer') {
+            // create answer
             connections[fromId].createAnswer().then((description) => {
-              connections[fromId].setLocalDescription(description).then(() => {
-                socketRef.current.send(JSON.stringify({
-                  type: "signal",
-                  toId: fromId,
-                  data: { sdp: connections[fromId].localDescription }
-                }));
-              }).catch(e => console.log(e))
-            }).catch(e => console.log(e))
+              return connections[fromId].setLocalDescription(description);
+            }).then(() => {
+              socketRef.current.send(JSON.stringify({
+                type: "signal",
+                toId: fromId,
+                data: { sdp: connections[fromId].localDescription }
+              }));
+            }).catch(e => console.error("Answer error:", e));
           }
-        }).catch(e => console.log(e))
-      }
-
-      if (signal.ice) {
-        connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
-      }
+        }).catch(e => console.error("setRemoteDescription error:", e));
     }
-  }
+
+    // ICE
+    if (signal.ice) {
+      connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice))
+        .catch(e => console.error("addIceCandidate error:", e));
+    }
+  };
 
 
 
-  const handleUserJoined = (id, clients) => {
-    clients.forEach((socketListId) => {
-      if (connections[socketListId]) return;
+  // const handleUserJoined = (id, clients) => {
+  //   clients.forEach((socketListId) => {
+  //     if (connections[socketListId]) return;
 
-      connections[socketListId] = new RTCPeerConnection(peerConfigConnections);
+  //     connections[socketListId] = new RTCPeerConnection(peerConfigConnections);
 
-      connections[socketListId].onicecandidate = function (event) {
-        if (event.candidate != null) {
+  //     connections[socketListId].onicecandidate = function (event) {
+  //       if (event.candidate != null) {
+  //         socketRef.current.send(JSON.stringify({
+  //           type: "signal",
+  //           toId: socketListId,
+  //           data: { ice: event.candidate }
+  //         }));
+  //       }
+  //     };
+
+  //     connections[socketListId].onaddstream = (event) => {
+  //       let videoExists = videoRef.current.find(v => v.socketId === socketListId);
+  //       if (videoExists) return;
+
+  //       const newVideo = {
+  //         socketId: socketListId,
+  //         stream: event.stream,
+  //         autoplay: true,
+  //         playsinline: true
+  //       };
+
+  //       setVideos(videos => {
+  //         const updated = [...videos, newVideo];
+  //         videoRef.current = updated;
+  //         return updated;
+  //       });
+  //     };
+
+  //     if (window.localStream) {
+  //       connections[socketListId].addStream(window.localStream);
+  //     }
+  //   });
+
+  //   if (id === socketIdRef.current) {
+  //     for (let id2 in connections) {
+  //       if (id2 === socketIdRef.current) continue;
+  //       connections[id2].createOffer().then((description) => {
+  //         connections[id2].setLocalDescription(description).then(() => {
+  //           socketRef.current.send(JSON.stringify({
+  //             type: "signal",
+  //             toId: id2,
+  //             data: { sdp: connections[id2].localDescription }
+  //           }));
+  //         });
+  //       });
+  //     }
+  //   }
+  // };
+
+
+  const handleUserJoined = (joinedId, clients) => {
+    console.log("handleUserJoined:", joinedId, clients, "myId:", socketIdRef.current);
+
+    // if server provided full clients list, iterate them
+    clients.forEach((remoteId) => {
+      if (remoteId === socketIdRef.current) return; // don't create for self
+      if (connections[remoteId]) return; // already created
+
+      const pc = new RTCPeerConnection(peerConfigConnections);
+      connections[remoteId] = pc;
+
+      // send ice
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
           socketRef.current.send(JSON.stringify({
             type: "signal",
-            toId: socketListId,
+            toId: remoteId,
             data: { ice: event.candidate }
           }));
         }
       };
 
-      connections[socketListId].onaddstream = (event) => {
-        let videoExists = videoRef.current.find(v => v.socketId === socketListId);
-        if (videoExists) return;
-
-        const newVideo = {
-          socketId: socketListId,
-          stream: event.stream,
-          autoplay: true,
-          playsinline: true
-        };
-
-        setVideos(videos => {
-          const updated = [...videos, newVideo];
+      // modern: ontrack (preferred) — handle remote streams
+      pc.ontrack = (event) => {
+        console.log("ontrack from", remoteId, event.streams);
+        const stream = event.streams && event.streams[0] ? event.streams[0] : event.stream;
+        setVideos(prev => {
+          if (prev.find(v => v.socketId === remoteId)) return prev;
+          const updated = [...prev, { socketId: remoteId, stream }];
           videoRef.current = updated;
           return updated;
         });
       };
 
+      // legacy (if you still rely on addStream)
+      pc.onaddstream = (event) => {
+        console.log("onaddstream from", remoteId);
+        const stream = event.stream;
+        setVideos(prev => {
+          if (prev.find(v => v.socketId === remoteId)) return prev;
+          const updated = [...prev, { socketId: remoteId, stream }];
+          videoRef.current = updated;
+          return updated;
+        });
+      };
+
+      // attach our local tracks
       if (window.localStream) {
-        connections[socketListId].addStream(window.localStream);
+        // prefer addTrack + track-based API
+        try {
+          window.localStream.getTracks().forEach(track => pc.addTrack(track, window.localStream));
+        } catch (e) {
+          // fallback to addStream if browser requires
+          try { pc.addStream(window.localStream); } catch (err) { console.warn(err); }
+        }
       }
+
     });
 
-    if (id === socketIdRef.current) {
-      for (let id2 in connections) {
-        if (id2 === socketIdRef.current) continue;
-        connections[id2].createOffer().then((description) => {
-          connections[id2].setLocalDescription(description).then(() => {
+    // If server indicates a new user joined (joinedId) and I'm already in room,
+    // then all existing users should createOffer to the newly joined user.
+    if (joinedId && joinedId !== socketIdRef.current) {
+      // this client is existing participant -> create offer to the newcomer
+      const pcForNew = connections[joinedId];
+      if (pcForNew) {
+        pcForNew.createOffer().then(desc => pcForNew.setLocalDescription(desc))
+          .then(() => {
             socketRef.current.send(JSON.stringify({
               type: "signal",
-              toId: id2,
-              data: { sdp: connections[id2].localDescription }
+              toId: joinedId,
+              data: { sdp: pcForNew.localDescription }
             }));
-          });
-        });
+          }).catch(e => console.error("createOffer error:", e));
       }
     }
   };
@@ -1900,8 +2011,10 @@ export default function VideoMeetComponent() {
       }));
     };
 
+    console.log("SOCK MSG:", msg);
     socket.onmessage = (event) => {
       const msg = JSON.parse(event.data);
+      console.log("SOCK MSG:", msg);
 
       switch (msg.type) {
         case "init":
