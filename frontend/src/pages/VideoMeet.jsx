@@ -300,7 +300,7 @@ export default function VideoMeetComponent() {
     socketRef.current = sock;
 
     sock.onopen = () => {
-      console.log("✅ SockJS connected");
+      console.log("SockJS connected");
       safeSend({ type: "join", username, room: window.location.href || "main-room" });
     };
 
@@ -336,7 +336,7 @@ export default function VideoMeetComponent() {
     };
 
     sock.onclose = () => {
-      console.log("❌ SockJS connection closed");
+      console.log("SockJS connection closed");
     };
 
     sock.onerror = (err) => {
