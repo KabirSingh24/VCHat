@@ -33,7 +33,7 @@ export default function Authentication() {
   const [open, setOpen] = React.useState(false)
 
 
-  const { handleRegister, handleLogin } = React.useContext(AuthContext);
+  const { handlerRegister, handleLogin } = React.useContext(AuthContext);
 
 
   let handleAuth = async () => {
@@ -45,7 +45,7 @@ export default function Authentication() {
 
       }
       if (formState === 1) {
-        let result = await handleRegister(name, username, password);
+        let result = await handlerRegister(name, username, password);
         console.log(result);
         setUsername("");
         setMessage(result);

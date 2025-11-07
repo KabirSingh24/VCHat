@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
     // Registration
     const handlerRegister = async (name, username, password) => {
         try {
-            const response = await client.post('/auth/registry', { name, username, password });
+            const response = await client.post('/registry', { name, username, password });
             if (response.status === httpStatus.CREATED) return response.data;
         } catch (err) {
             if (err.response?.status === httpStatus.CONFLICT) {
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     // Login
     const handleLogin = async (username, password) => {
         try {
-            const response = await client.post('/auth/login', { username, password });
+            const response = await client.post('/login', { username, password });
             if (response.status === 200) {
                 window.localStorage.setItem("token", response.data.token);
                 router("/home");
