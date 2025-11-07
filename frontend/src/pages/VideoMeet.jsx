@@ -535,7 +535,7 @@ export default function VideoMeetComponent() {
                     }
                   }}
                   autoPlay
-                  style={{ width: "540", height: "380" }}
+                  style={{ width: 540, height: 380 }}
                 >
                 </video>
               </div>
