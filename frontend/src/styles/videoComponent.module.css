@@ -121,6 +121,11 @@
     bottom: 0;
 }
 
+#remote-videos{
+    width:fit-content;
+    height:400px;
+}
+
 
 /* 
 .meetVideoContainer {
