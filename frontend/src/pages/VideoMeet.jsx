@@ -468,7 +468,7 @@ export default function VideoMeetComponent() {
           <Button variant="contained" onClick={connect}>Connect</Button>
 
           <div>
-            <video ref={localVideoref} autoPlay muted style={{ width: 440, height: 180 }} ></video>
+            <video ref={localVideoref} autoPlay muted style={{ width: 240, height: 180 }} ></video>
           </div>
         </div> :
 
@@ -535,6 +535,7 @@ export default function VideoMeetComponent() {
                     }
                   }}
                   autoPlay
+                  style={{ width: "540", height: "380" }}
                 >
                 </video>
               </div>
